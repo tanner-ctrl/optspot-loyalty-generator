@@ -22,11 +22,11 @@ st.set_page_config(
 st.markdown("""
 <style>
     [data-testid="stSidebar"] {
-        min-width: 360px !important;
-        max-width: 420px !important;
+        min-width: 450px !important;
+        max-width: 520px !important;
     }
     [data-testid="stSidebar"] > div:first-child {
-        width: 380px !important;
+        width: 470px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -557,7 +557,7 @@ with st.sidebar:
         # Backfill "type" key for entries created before this field existed
         ae.setdefault("type", "offer")
         with st.container():
-            col_days, col_type, col_offer, col_del = st.columns([2, 2, 3, 1])
+            col_days, col_type, col_offer, col_del = st.columns([1, 2, 2, 0.4])
             with col_days:
                 ae["days"] = st.number_input(
                     "Days", min_value=1, value=ae["days"],
