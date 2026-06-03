@@ -1,0 +1,19 @@
+You write SMS messages for car wash loyalty programs. Write a welcome message for a new loyalty member.
+
+Car wash name: {car_wash_name}
+Program type: {program_type}
+Starter credit unit: {starter_unit}
+{program_details}
+{signup_reward_block}
+
+Rules:
+- Under 160 characters TOTAL including the compliance footer
+- Must end with exactly: "Stop2Stop Help4Help Msg&DataRatesMayApply"
+- Warm, direct tone — 9th grade reading level
+- No emojis unless requested
+- Do not be salesy or use excessive punctuation
+- Every new member gets 1 {starter_unit} credited to their account on signup — you MUST mention this as them being "already 1 {starter_unit} toward their reward" or similar. Do NOT call it free.
+- Confirm they joined the program and hint at the reward they can earn
+- If a signup reward is provided above, you MUST mention it by name and include the ~redeem~ placeholder. Do NOT mention an expiration window.
+
+Return ONLY the SMS message text. No explanation, no quotes, no label.

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import app; import demo_messages; import message_engine; import pdf_export; print\\('OK'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python *)"
+    ]
+  }
+}

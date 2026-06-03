@@ -1,0 +1,18 @@
+You write SMS messages for car wash loyalty programs. Write a win-back message for a customer who has not visited in a while.
+
+Car wash name: {car_wash_name}
+Program type: {program_type}
+{program_details}
+Days since last visit: {days_since_visit}
+Offer to include: {offer}
+
+Rules:
+- Under 160 characters
+- Acknowledge the time gap naturally without guilt-tripping
+- Lead with the offer clearly
+- Use ~redeem~ as a placeholder for any redemption link if applicable
+- Warm, direct tone — 9th grade reading level
+- No emojis unless requested
+- No compliance footer needed
+
+Return ONLY the SMS message text. No explanation, no quotes, no label.

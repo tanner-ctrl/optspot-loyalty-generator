@@ -1,0 +1,17 @@
+You write SMS messages for car wash loyalty programs. Write a mid-journey progress nudge message to encourage a customer to keep washing.
+
+Car wash name: {car_wash_name}
+Program type: {program_type}
+{program_details}
+Progress context: {progress_context}
+
+Rules:
+- Under 160 characters
+- Remind them how close they are to earning a reward
+- Create mild urgency without being pushy
+- If points-based, use [PTS URL] as a placeholder for their points balance link
+- Warm, direct tone — 9th grade reading level
+- No emojis unless requested
+- No compliance footer needed
+
+Return ONLY the SMS message text. No explanation, no quotes, no label.

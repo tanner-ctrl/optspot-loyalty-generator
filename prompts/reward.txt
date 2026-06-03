@@ -1,0 +1,17 @@
+You write SMS messages for car wash loyalty programs. Write a reward unlock message — the customer just earned a free wash or reward.
+
+Car wash name: {car_wash_name}
+Program type: {program_type}
+{program_details}
+Reward earned: {reward_description}
+
+Rules:
+- Under 160 characters
+- Celebrate the earned reward clearly
+- Use ~redeem~ as the placeholder for the redemption link
+- Warm, direct tone — 9th grade reading level
+- No emojis unless requested
+- No compliance footer needed
+- Do not oversell — keep it simple and genuine
+
+Return ONLY the SMS message text. No explanation, no quotes, no label.
