@@ -40,8 +40,8 @@ def check_password():
         st.error("Incorrect password. Contact Tanner for access.")
     return False
 
-if not check_password():
-    st.stop()
+# if not check_password():
+   #     st.stop()
 
 localS = LocalStorage()
 
