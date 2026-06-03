@@ -77,11 +77,16 @@ def _load_from_storage():
     if st.session_state.get("_just_reset"):
         del st.session_state["_just_reset"]
         return
-    saved = localS.getItem(_LS_KEY, key="ls_load_config")
-    if saved and isinstance(saved, dict):
-        for k, v in saved.items():
-            if k not in st.session_state:
-                st.session_state[k] = v
+    if "_storage_loaded" not in st.session_state:
+        try:
+            saved = localS.getItem(_LS_KEY)
+            if saved and isinstance(saved, dict):
+                for k, v in saved.items():
+                    if k not in st.session_state:
+                        st.session_state[k] = v
+        except Exception:
+            pass
+        st.session_state["_storage_loaded"] = True
 
 
 def _save_to_storage():
