@@ -1,12 +1,13 @@
 import base64
 import hmac
 import re
-from datetime import date
+from datetime import date, datetime
 from PIL import Image
 import streamlit as st
 from streamlit_local_storage import LocalStorage
 from message_engine import generate_message, is_demo_mode
 from pdf_export import build_pdf
+import resend
 
 # ── Page config ────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,41 @@ def check_password():
 
 # if not check_password():
    #     st.stop()
+
+# ── Feedback form via Resend ───────────────────────────────────────────────────
+
+def send_feedback_via_resend(am_name, message, screenshot=None):
+    resend.api_key = st.secrets.get("resend_api_key")
+    if not resend.api_key:
+        raise ValueError("resend_api_key not configured in secrets")
+
+    feedback_to = st.secrets.get("feedback_to", "tanner@optspot.com")
+    sender = st.secrets.get("resend_sender", "OptSpot Feedback <onboarding@resend.dev>")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    html_body = f"""
+    <h3>New feedback from {am_name}</h3>
+    <p><strong>Submitted:</strong> {timestamp}</p>
+    <hr>
+    <p><strong>Message:</strong></p>
+    <p>{message.replace(chr(10), '<br>')}</p>
+    """
+
+    email_payload = {
+        "from": sender,
+        "to": [feedback_to],
+        "subject": f"[Loyalty Generator] Feedback from {am_name}",
+        "html": html_body,
+    }
+
+    if screenshot is not None:
+        img_bytes = screenshot.read()
+        email_payload["attachments"] = [{
+            "filename": screenshot.name,
+            "content": list(img_bytes),
+        }]
+
+    resend.Emails.send(email_payload)
 
 localS = LocalStorage()
 
@@ -667,6 +703,25 @@ with st.sidebar:
             on_click=_confirm_reset,
             use_container_width=True,
         )
+
+    st.divider()
+
+    # ── Feedback form ──
+    with st.expander("📩 Send Feedback"):
+        with st.form("feedback_form", clear_on_submit=True):
+            am_name = st.text_input("Your name")
+            feedback_msg = st.text_area("Your feedback", height=120)
+            screenshot = st.file_uploader("Screenshot (optional)", type=["png", "jpg", "jpeg"])
+            submitted = st.form_submit_button("Send Feedback")
+            if submitted:
+                if not am_name or not feedback_msg:
+                    st.error("Please fill in your name and feedback.")
+                else:
+                    try:
+                        send_feedback_via_resend(am_name, feedback_msg, screenshot)
+                        st.success("Thanks! Your feedback was sent.")
+                    except Exception as e:
+                        st.error(f"Send failed: {e}")
 
     st.divider()
     st.caption("Internal Prototype — OptSpot use only. Not production-final.")
