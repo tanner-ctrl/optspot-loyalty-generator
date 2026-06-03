@@ -405,9 +405,9 @@ with st.sidebar:
         on_change=_save_to_storage,
     )
     st.caption(
-        "Every new member gets 1 free starter "
+        "Every new member starts with 1 "
         + ("point" if program_type == "points-based" else "visit")
-        + " on signup."
+        + " upon joining."
     )
 
     visit_tracked_enabled = st.toggle(
