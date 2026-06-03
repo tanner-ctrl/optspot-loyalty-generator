@@ -17,6 +17,20 @@ st.set_page_config(
     layout="wide",
 )
 
+# ── Sidebar width ──────────────────────────────────────────────────────────────
+
+st.markdown("""
+<style>
+    [data-testid="stSidebar"] {
+        min-width: 360px !important;
+        max-width: 420px !important;
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        width: 380px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # ── Password gate ──────────────────────────────────────────────────────────────
 
 def check_password():
@@ -63,7 +77,7 @@ def _load_from_storage():
     if st.session_state.get("_just_reset"):
         del st.session_state["_just_reset"]
         return
-    saved = localS.getItem(_LS_KEY)
+    saved = localS.getItem(_LS_KEY, key="ls_load_config")
     if saved and isinstance(saved, dict):
         for k, v in saved.items():
             if k not in st.session_state:
@@ -121,7 +135,7 @@ def _save_to_storage():
         }
         for i in range(n_ae)
     ]
-    localS.setItem(_LS_KEY, config)
+    localS.setItem(_LS_KEY, config, key="ls_save_config")
 
 
 _load_from_storage()
@@ -621,7 +635,7 @@ with st.sidebar:
         st.session_state["_confirm_reset"] = False
 
     def _do_reset():
-        localS.deleteItem(_LS_KEY)
+        localS.deleteItem(_LS_KEY, key="ls_reset_delete")
         for k in list(st.session_state.keys()):
             del st.session_state[k]
         st.session_state["_just_reset"] = True
