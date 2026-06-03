@@ -74,73 +74,79 @@ _SCALAR_PERSIST_KEYS = [
 
 
 def _load_from_storage():
-    if st.session_state.get("_just_reset"):
-        del st.session_state["_just_reset"]
+    if st.session_state.get("_storage_loaded_this_run", False):
         return
-    if "_storage_loaded" not in st.session_state:
-        try:
-            saved = localS.getItem(_LS_KEY)
-            if saved and isinstance(saved, dict):
-                for k, v in saved.items():
-                    if k not in st.session_state:
-                        st.session_state[k] = v
-        except Exception:
-            pass
-        st.session_state["_storage_loaded"] = True
+    try:
+        saved = localS.getItem(_LS_KEY)
+        if saved and isinstance(saved, dict):
+            for k, v in saved.items():
+                if k not in st.session_state:
+                    st.session_state[k] = v
+        st.session_state["_storage_loaded_this_run"] = True
+    except Exception as e:
+        print(f"[storage] load failed: {e}")
+        st.session_state["_storage_loaded_this_run"] = True
 
 
 def _save_to_storage():
-    config = {k: st.session_state[k] for k in _SCALAR_PERSIST_KEYS if k in st.session_state}
-    # Rebuild list data from widget keys — Streamlit updates widget session state
-    # keys BEFORE calling on_change, so these reflect the latest user input even
-    # when the backing list dict hasn't been reassigned yet.
-    n_tiers = len(st.session_state.get("tiers", []))
-    config["tiers"] = [
-        {
-            "visits": st.session_state.get(
-                f"tier_visits_{i}",
-                st.session_state.tiers[i]["visits"] if i < n_tiers else 5,
-            ),
-            "reward": st.session_state.get(
-                f"tier_reward_{i}",
-                st.session_state.tiers[i]["reward"] if i < n_tiers else "",
-            ),
-        }
-        for i in range(n_tiers)
-    ]
-    n_pkgs = len(st.session_state.get("packages", []))
-    config["packages"] = [
-        {
-            "name": st.session_state.get(
-                f"pkg_name_{i}",
-                st.session_state.packages[i]["name"] if i < n_pkgs else "",
-            ),
-            "points": st.session_state.get(
-                f"pkg_pts_{i}",
-                st.session_state.packages[i]["points"] if i < n_pkgs else 10,
-            ),
-        }
-        for i in range(n_pkgs)
-    ]
-    n_ae = len(st.session_state.get("auto_engage", []))
-    config["auto_engage"] = [
-        {
-            "days": st.session_state.get(
-                f"ae_days_{i}",
-                st.session_state.auto_engage[i]["days"] if i < n_ae else 30,
-            ),
-            "type": st.session_state.get(
-                f"ae_type_{i}",
-                st.session_state.auto_engage[i].get("type", "offer") if i < n_ae else "offer",
-            ),
-            "offer": st.session_state.get(
-                f"ae_offer_{i}",
-                st.session_state.auto_engage[i].get("offer", "") if i < n_ae else "",
-            ),
-        }
-        for i in range(n_ae)
-    ]
-    localS.setItem(_LS_KEY, config, key="ls_save_config")
+    # Guard: only run once per script run to prevent duplicate localStorage calls
+    if st.session_state.get("_storage_saved_this_run", False):
+        return
+    try:
+        config = {k: st.session_state[k] for k in _SCALAR_PERSIST_KEYS if k in st.session_state}
+        # Rebuild list data from widget keys — Streamlit updates widget session state
+        # keys BEFORE calling on_change, so these reflect the latest user input even
+        # when the backing list dict hasn't been reassigned yet.
+        n_tiers = len(st.session_state.get("tiers", []))
+        config["tiers"] = [
+            {
+                "visits": st.session_state.get(
+                    f"tier_visits_{i}",
+                    st.session_state.tiers[i]["visits"] if i < n_tiers else 5,
+                ),
+                "reward": st.session_state.get(
+                    f"tier_reward_{i}",
+                    st.session_state.tiers[i]["reward"] if i < n_tiers else "",
+                ),
+            }
+            for i in range(n_tiers)
+        ]
+        n_pkgs = len(st.session_state.get("packages", []))
+        config["packages"] = [
+            {
+                "name": st.session_state.get(
+                    f"pkg_name_{i}",
+                    st.session_state.packages[i]["name"] if i < n_pkgs else "",
+                ),
+                "points": st.session_state.get(
+                    f"pkg_pts_{i}",
+                    st.session_state.packages[i]["points"] if i < n_pkgs else 10,
+                ),
+            }
+            for i in range(n_pkgs)
+        ]
+        n_ae = len(st.session_state.get("auto_engage", []))
+        config["auto_engage"] = [
+            {
+                "days": st.session_state.get(
+                    f"ae_days_{i}",
+                    st.session_state.auto_engage[i]["days"] if i < n_ae else 30,
+                ),
+                "type": st.session_state.get(
+                    f"ae_type_{i}",
+                    st.session_state.auto_engage[i].get("type", "offer") if i < n_ae else "offer",
+                ),
+                "offer": st.session_state.get(
+                    f"ae_offer_{i}",
+                    st.session_state.auto_engage[i].get("offer", "") if i < n_ae else "",
+                ),
+            }
+            for i in range(n_ae)
+        ]
+        localS.setItem(_LS_KEY, config, key="ls_save_config")
+        st.session_state["_storage_saved_this_run"] = True
+    except Exception as e:
+        print(f"[storage] save failed: {e}")
 
 
 _load_from_storage()
@@ -640,10 +646,13 @@ with st.sidebar:
         st.session_state["_confirm_reset"] = False
 
     def _do_reset():
-        localS.deleteItem(_LS_KEY, key="ls_reset_delete")
-        for k in list(st.session_state.keys()):
+        # Clear config keys (everything except internal flags starting with _)
+        keys_to_clear = [k for k in st.session_state.keys() if not k.startswith("_")]
+        for k in keys_to_clear:
             del st.session_state[k]
-        st.session_state["_just_reset"] = True
+        # Reset guards so next render will load defaults from storage (or empty)
+        st.session_state["_storage_saved_this_run"] = False
+        st.session_state["_storage_loaded_this_run"] = False
 
     if st.session_state.get("_confirm_reset"):
         st.warning("This will clear all settings and messages.")
