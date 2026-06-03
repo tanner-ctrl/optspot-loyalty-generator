@@ -39,7 +39,7 @@ python-multipart==0.0.29
 referencing==0.37.0
 reportlab==4.5.1
 requests==2.34.2
-resend==2.5.0
+resend==2.5.1
 rpds-py==0.30.0
 six==1.17.0
 smmap==5.0.3
