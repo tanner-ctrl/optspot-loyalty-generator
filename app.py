@@ -397,7 +397,7 @@ pre {
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 
 with st.sidebar:
-    logo_b64 = _img_b64("assets/optspot_logo_dark.png")
+    logo_b64 = _img_b64("assets/optspot_logo.png")
     st.markdown(
         f"""<div style="padding:14px 0 10px 0;">
               <img src="data:image/png;base64,{logo_b64}"
