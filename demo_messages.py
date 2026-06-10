@@ -194,37 +194,27 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
             ]
         else:
             sms = [
-                f"Wash tracked at {name}! {status}",
-                f"{name}: Got your wash. {status}",
-                f"Visit confirmed at {name}. {status}",
-                f"{name} logged your wash. {status}",
+                f"Thanks for visiting {name}! ~ls~ added today, ~lsr~ total. Stop2Stop Help4Help",
+                f"Great to see you back at {name}! You earned ~ls~ this visit (~lsr~ total). Stop2Stop Help4Help",
+                f"Thanks for the wash at {name}! ~ls~ credited, ~lsr~ on your account. Stop2Stop Help4Help",
+                f"{name} thanks you for visiting! ~ls~ this visit, ~lsr~ total. Stop2Stop Help4Help",
             ]
             mms = [
                 (
-                    f"Wash confirmed at {name}!\n\n"
-                    f"{status}\n\n"
-                    f"Every visit adds up. Keep coming back and your reward will be waiting "
-                    f"before you know it. We track everything — nothing falls through the cracks.\n\n"
-                    f"See you next time!"
+                    f"Thanks for visiting {name}! You earned ~ls~ today, bringing you to ~lsr~ total. "
+                    f"Keep washing to unlock your rewards — check progress: [TRACK URL]"
                 ),
                 (
-                    f"{name}: Visit logged!\n\n"
-                    f"{status}\n\n"
-                    f"You're making great progress. Stay consistent and "
-                    f"your reward will come sooner than you think. "
-                    f"We'll send you a reminder when you're getting close.\n\nThanks for coming in."
+                    f"Great to see you back at {name}! ~ls~ added to your account this visit (~lsr~ total). "
+                    f"Track your progress: [TRACK URL]"
                 ),
                 (
-                    f"Got it — another wash on the books at {name}.\n\n"
-                    f"{status}\n\n"
-                    f"You're on your way. We keep track automatically so you never lose progress. "
-                    f"We'll notify you when you hit your goal. Keep it up!"
+                    f"Thanks for the wash at {name}! ~ls~ credited this visit. "
+                    f"Your running total: ~lsr~. See your progress anytime: [TRACK URL]"
                 ),
                 (
-                    f"Visit confirmed at {name}!\n\n"
-                    f"{status}\n\n"
-                    f"You're building momentum. A few more visits and your reward is yours. "
-                    f"Thanks for choosing us — we appreciate your loyalty."
+                    f"{name} thanks you! You earned ~ls~ this visit (~lsr~ total). "
+                    f"Keep washing — your next reward is closer than you think. Check progress: [TRACK URL]"
                 ),
             ]
 
