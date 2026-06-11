@@ -106,6 +106,7 @@ _SCALAR_PERSIST_KEYS = [
     "use_hot_prospect", "hot_min_visits", "hot_within_days",
     "hot_offer", "points_to_redeem", "reward_description", "default_mode",
     "view_mode",
+    "hpo_membership_offer", "hpo_timeframe_days", "hpo_min_visits", "hpo_max_checkins",
 ]
 
 
@@ -670,6 +671,28 @@ with st.sidebar:
         )
 
     st.divider()
+
+    # ── HPO config (PDF-only) ──
+    st.markdown('<p class="sidebar-section">🔥 Hot Prospect Offer (HPO)</p>', unsafe_allow_html=True)
+    st.caption("Configure the Hot Prospect Offer rules. These appear in the PDF summary for client review.")
+    st.text_input(
+        "HPO Membership Offer", placeholder="e.g. Free Graphene Wash",
+        key="hpo_membership_offer", on_change=_save_to_storage,
+    )
+    st.number_input(
+        "HPO Timeframe (days)", min_value=1, value=st.session_state.get("hpo_timeframe_days", 30),
+        key="hpo_timeframe_days", on_change=_save_to_storage,
+    )
+    st.number_input(
+        "HPO Minimum Visits", min_value=1, value=st.session_state.get("hpo_min_visits", 3),
+        key="hpo_min_visits", on_change=_save_to_storage,
+    )
+    st.number_input(
+        "HPO Maximum Check-ins", min_value=1, value=st.session_state.get("hpo_max_checkins", 10),
+        key="hpo_max_checkins", on_change=_save_to_storage,
+    )
+
+    st.divider()
     generate_btn = st.button("Generate Messages", type="primary", use_container_width=True)
 
     st.divider()
@@ -1138,6 +1161,11 @@ if st.session_state.get("generated"):
                 "signup_reward_expires_days": st.session_state.get("signup_reward_expires_days", 7),
                 "tiers": st.session_state.get("tiers", []) if program_type == "visit-based" else [],
                 "visit_tracked_enabled": st.session_state.get("visit_tracked_enabled", True),
+                "hpo_membership_offer": st.session_state.get("hpo_membership_offer", ""),
+                "hpo_timeframe_days": st.session_state.get("hpo_timeframe_days", 30),
+                "hpo_min_visits": st.session_state.get("hpo_min_visits", 3),
+                "hpo_max_checkins": st.session_state.get("hpo_max_checkins", 10),
+                "auto_engage": st.session_state.get("auto_engage", []),
             },
             _collect_pdf_messages(),
         )

@@ -293,6 +293,93 @@ def _loop_callout(width: float) -> KeepTogether:
     return KeepTogether([tbl])
 
 
+# ── Incentives Summary block ───────────────────────────────────────────────────
+
+def _incentives_summary(context: dict, styles: dict, story: list, width: float) -> None:
+    """Navy-header callout listing all loyalty program incentive rules for client review."""
+    CALLOUT_BG = colors.HexColor("#EEF2F8")
+
+    items = []
+
+    # 1. Check-in offer — first tier
+    tiers = context.get("tiers", [])
+    if tiers:
+        first = tiers[0]
+        visits = first.get("visits", "")
+        reward = first.get("reward", "")
+        if visits and reward:
+            items.append(f"Earn a {reward} after {visits} visits")
+
+    # 2–5. HPO fields (skip if empty / default-only)
+    hpo_offer = (context.get("hpo_membership_offer") or "").strip()
+    if hpo_offer:
+        items.append(f"HPO Membership Offer: {hpo_offer}")
+
+    hpo_days = context.get("hpo_timeframe_days")
+    if hpo_days:
+        items.append(f"HPO Timeframe: {hpo_days} days")
+
+    hpo_min = context.get("hpo_min_visits")
+    if hpo_min:
+        items.append(f"HPO Minimum Visits: {hpo_min}")
+
+    hpo_max = context.get("hpo_max_checkins")
+    if hpo_max:
+        items.append(f"HPO Maximum Check-ins: {hpo_max}")
+
+    # 6. Auto-Engage offer entries only
+    for ae in context.get("auto_engage", []):
+        if ae.get("type", "offer") == "offer" and (ae.get("offer") or "").strip():
+            items.append(f"{ae['days']} Day Offer: {ae['offer']}")
+
+    if not items:
+        return
+
+    header_style = ParagraphStyle(
+        "incentives_header",
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        textColor=colors.white,
+        leading=16,
+    )
+    body_style = ParagraphStyle(
+        "incentives_body",
+        fontName="Helvetica",
+        fontSize=11,
+        textColor=DARK_GRAY,
+        leading=17,
+    )
+
+    rows = [[Paragraph("Program Incentives Summary", header_style)]]
+    for item in items:
+        rows.append([Paragraph(f"•  {html.escape(item)}", body_style)])
+
+    tbl = Table(rows, colWidths=[width])
+
+    style_cmds = [
+        ("BACKGROUND",    (0, 0), (0, 0),  NAVY),
+        ("BOX",           (0, 0), (-1, -1), 0.75, NAVY),
+        ("TOPPADDING",    (0, 0), (0, 0),  8),
+        ("BOTTOMPADDING", (0, 0), (0, 0),  8),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 12),
+    ]
+    for r in range(1, len(rows)):
+        style_cmds += [
+            ("BACKGROUND",    (0, r), (0, r), CALLOUT_BG),
+            ("TOPPADDING",    (0, r), (0, r), 5),
+            ("BOTTOMPADDING", (0, r), (0, r), 5),
+        ]
+    tbl.setStyle(TableStyle(style_cmds))
+
+    story.append(HRFlowable(
+        width="100%", thickness=0.4, color=NAVY,
+        spaceBefore=12, spaceAfter=8,
+    ))
+    story.append(KeepTogether([tbl]))
+    story.append(Spacer(1, 8))
+
+
 # ── Section helper ─────────────────────────────────────────────────────────────
 
 def _section(
@@ -364,6 +451,9 @@ def build_pdf(
         story.append(Paragraph(f"Generated {gen_date}", styles["date"]))
     story.append(Spacer(1, 12))
     story.append(HRFlowable(width="100%", thickness=0.75, color=NAVY, spaceAfter=8))
+
+    # ── Incentives Summary ─────────────────────────────────────────────────────
+    _incentives_summary(context, styles, story, FRAME_W)
 
     # ── Welcome & Onboarding ───────────────────────────────────────────────────
     welcome_items = []
