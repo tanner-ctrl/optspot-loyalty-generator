@@ -105,6 +105,7 @@ _SCALAR_PERSIST_KEYS = [
     "visit_tracked_enabled",
     "points_to_redeem", "reward_description", "default_mode",
     "view_mode",
+    "hpo_enabled",
     "hpo_membership_offer", "hpo_timeframe_days", "hpo_min_visits", "hpo_max_checkins",
 ]
 
@@ -648,23 +649,30 @@ with st.sidebar:
 
     # ── HPO config (PDF-only) ──
     st.markdown('<p class="sidebar-section">🔥 Hot Prospect Offer (HPO)</p>', unsafe_allow_html=True)
-    st.caption("Configure the Hot Prospect Offer rules. These appear in the PDF summary for client review.")
-    st.text_input(
-        "HPO Membership Offer", placeholder="e.g. Free Graphene Wash",
-        key="hpo_membership_offer", on_change=_save_to_storage,
+    hpo_enabled = st.toggle(
+        "Enable Hot Prospect Offer",
+        value=st.session_state.get("hpo_enabled", True),
+        key="hpo_enabled",
+        on_change=_save_to_storage,
     )
-    st.number_input(
-        "HPO Timeframe (days)", min_value=1, value=st.session_state.get("hpo_timeframe_days", 30),
-        key="hpo_timeframe_days", on_change=_save_to_storage,
-    )
-    st.number_input(
-        "HPO Minimum Visits", min_value=1, value=st.session_state.get("hpo_min_visits", 3),
-        key="hpo_min_visits", on_change=_save_to_storage,
-    )
-    st.number_input(
-        "HPO Maximum Check-ins", min_value=1, value=st.session_state.get("hpo_max_checkins", 10),
-        key="hpo_max_checkins", on_change=_save_to_storage,
-    )
+    st.caption("Turn off if the client doesn't use HPO.")
+    if hpo_enabled:
+        st.text_input(
+            "HPO Membership Offer", placeholder="e.g. Free Graphene Wash",
+            key="hpo_membership_offer", on_change=_save_to_storage,
+        )
+        st.number_input(
+            "HPO Timeframe (days)", min_value=1, value=st.session_state.get("hpo_timeframe_days", 30),
+            key="hpo_timeframe_days", on_change=_save_to_storage,
+        )
+        st.number_input(
+            "HPO Minimum Visits", min_value=1, value=st.session_state.get("hpo_min_visits", 3),
+            key="hpo_min_visits", on_change=_save_to_storage,
+        )
+        st.number_input(
+            "HPO Maximum Check-ins", min_value=1, value=st.session_state.get("hpo_max_checkins", 10),
+            key="hpo_max_checkins", on_change=_save_to_storage,
+        )
 
     st.divider()
     generate_btn = st.button("Generate Messages", type="primary", use_container_width=True)
@@ -996,9 +1004,12 @@ if generate_btn:
             st.session_state[k] = generate_message("autoengage", ae_ctx)
             _meta[k] = {"type": "autoengage", "context": dict(ae_ctx)}
 
-        # Hot prospect — always generated
-        st.session_state["msg_hot_prospect"] = generate_message("hot_prospect", base_ctx)
-        _meta["msg_hot_prospect"] = {"type": "hot_prospect", "context": dict(base_ctx)}
+        # Hot prospect — only when HPO is enabled
+        if st.session_state.get("hpo_enabled", True):
+            st.session_state["msg_hot_prospect"] = generate_message("hot_prospect", base_ctx)
+            _meta["msg_hot_prospect"] = {"type": "hot_prospect", "context": dict(base_ctx)}
+        else:
+            st.session_state.pop("msg_hot_prospect", None)
 
     st.session_state["msg_meta"] = _meta
 
@@ -1101,7 +1112,7 @@ if st.session_state.get("generated"):
                     "mode": st.session_state.get(f"mode_{key}", "SMS"),
                     "image_data": _resolve_image(key)[0],
                 })
-        if st.session_state.get("msg_hot_prospect"):
+        if st.session_state.get("msg_hot_prospect") and st.session_state.get("hpo_enabled", True):
             msgs["hot_prospect"] = {
                 "label": "Hot Prospect Offer",
                 "text": st.session_state["msg_hot_prospect"],
@@ -1132,6 +1143,7 @@ if st.session_state.get("generated"):
                 "signup_reward_expires_days": st.session_state.get("signup_reward_expires_days", 7),
                 "tiers": st.session_state.get("tiers", []) if program_type == "visit-based" else [],
                 "visit_tracked_enabled": st.session_state.get("visit_tracked_enabled", True),
+                "hpo_enabled": st.session_state.get("hpo_enabled", True),
                 "hpo_membership_offer": st.session_state.get("hpo_membership_offer", ""),
                 "hpo_timeframe_days": st.session_state.get("hpo_timeframe_days", 30),
                 "hpo_min_visits": st.session_state.get("hpo_min_visits", 3),
@@ -1232,7 +1244,7 @@ if st.session_state.get("generated"):
             elif g_err == "warn":
                 st.warning("Over 500 KB — iVision Mobile recommends staying under 500 KB.")
 
-    show_hp = bool(st.session_state.get("msg_hot_prospect"))
+    show_hp = bool(st.session_state.get("msg_hot_prospect")) and st.session_state.get("hpo_enabled", True)
 
     # Compute tracked_extra once — used in both Tabs and All-in-One views
     if program_type == "visit-based":

@@ -310,22 +310,23 @@ def _incentives_summary(context: dict, styles: dict, story: list, width: float) 
         if visits and reward:
             items.append(f"Earn a {reward} after {visits} visits")
 
-    # 2–5. HPO fields (skip if empty / default-only)
-    hpo_offer = (context.get("hpo_membership_offer") or "").strip()
-    if hpo_offer:
-        items.append(f"HPO Membership Offer: {hpo_offer}")
+    # 2–5. HPO fields — only when HPO is enabled
+    if context.get("hpo_enabled", True):
+        hpo_offer = (context.get("hpo_membership_offer") or "").strip()
+        if hpo_offer:
+            items.append(f"HPO Membership Offer: {hpo_offer}")
 
-    hpo_days = context.get("hpo_timeframe_days")
-    if hpo_days:
-        items.append(f"HPO Timeframe: {hpo_days} days")
+        hpo_days = context.get("hpo_timeframe_days")
+        if hpo_days:
+            items.append(f"HPO Timeframe: {hpo_days} days")
 
-    hpo_min = context.get("hpo_min_visits")
-    if hpo_min:
-        items.append(f"HPO Minimum Visits: {hpo_min}")
+        hpo_min = context.get("hpo_min_visits")
+        if hpo_min:
+            items.append(f"HPO Minimum Visits: {hpo_min}")
 
-    hpo_max = context.get("hpo_max_checkins")
-    if hpo_max:
-        items.append(f"HPO Maximum Check-ins: {hpo_max}")
+        hpo_max = context.get("hpo_max_checkins")
+        if hpo_max:
+            items.append(f"HPO Maximum Check-ins: {hpo_max}")
 
     # 6. Auto-Engage offer entries only
     for ae in context.get("auto_engage", []):
