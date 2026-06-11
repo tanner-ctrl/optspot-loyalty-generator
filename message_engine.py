@@ -95,8 +95,6 @@ def generate_message(message_type: str, context: dict, temperature: float = 0.7,
         "reward_description": context.get("reward_description", ""),
         "days_since_visit": context.get("days_since_visit", ""),
         "offer": context.get("offer", ""),
-        "min_visits": context.get("min_visits", ""),
-        "within_days": context.get("within_days", ""),
         "signup_reward_block": signup_reward_block,
         "starter_unit": starter_unit,
     }

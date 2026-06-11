@@ -103,8 +103,7 @@ _SCALAR_PERSIST_KEYS = [
     "car_wash_name", "program_type",
     "signup_reward_enabled", "signup_reward", "signup_reward_expires_days",
     "visit_tracked_enabled",
-    "use_hot_prospect", "hot_min_visits", "hot_within_days",
-    "hot_offer", "points_to_redeem", "reward_description", "default_mode",
+    "points_to_redeem", "reward_description", "default_mode",
     "view_mode",
     "hpo_membership_offer", "hpo_timeframe_days", "hpo_min_visits", "hpo_max_checkins",
 ]
@@ -647,31 +646,6 @@ with st.sidebar:
 
     st.divider()
 
-    # ── Hot prospect ──
-    st.markdown('<p class="sidebar-section">Hot Prospect Offer</p>', unsafe_allow_html=True)
-    st.caption("Optional — targets frequent visitors")
-    use_hot_prospect = st.checkbox(
-        "Enable hot prospect message",
-        key="use_hot_prospect",
-        on_change=_save_to_storage,
-    )
-    hot_min_visits = hot_within_days = hot_offer = None
-    if use_hot_prospect:
-        hot_min_visits = st.number_input(
-            "Min visits in window", min_value=1, value=3,
-            key="hot_min_visits", on_change=_save_to_storage,
-        )
-        hot_within_days = st.number_input(
-            "Within days", min_value=1, value=30,
-            key="hot_within_days", on_change=_save_to_storage,
-        )
-        hot_offer = st.text_input(
-            "Offer", placeholder="e.g. Free upgrade on your next visit",
-            key="hot_offer", on_change=_save_to_storage,
-        )
-
-    st.divider()
-
     # ── HPO config (PDF-only) ──
     st.markdown('<p class="sidebar-section">🔥 Hot Prospect Offer (HPO)</p>', unsafe_allow_html=True)
     st.caption("Configure the Hot Prospect Offer rules. These appear in the PDF summary for client review.")
@@ -819,6 +793,7 @@ def render_message_card(
     context: dict,
     msg_type: str,
     extra_ctx: dict = None,
+    show_regen: bool = True,
 ):
     if msg_key not in st.session_state:
         return
@@ -948,13 +923,16 @@ def render_message_card(
             height=120 if current_mode == "MMS" else 100,
         )
 
-        rcol, ccol = st.columns([1, 1])
-        with rcol:
-            # on_click fires before the next script execution — writing to msg_key
-            # (the textarea key) inside _do_regen is safe because the widget
-            # hasn't been instantiated yet at that point.
-            st.button("↺ Regenerate", key=f"regen_{msg_key}", on_click=_do_regen)
-        with ccol:
+        if show_regen:
+            rcol, ccol = st.columns([1, 1])
+            with rcol:
+                # on_click fires before the next script execution — writing to msg_key
+                # (the textarea key) inside _do_regen is safe because the widget
+                # hasn't been instantiated yet at that point.
+                st.button("↺ Regenerate", key=f"regen_{msg_key}", on_click=_do_regen)
+            with ccol:
+                st.code(edited, language=None)
+        else:
             st.code(edited, language=None)
 
 
@@ -1018,16 +996,9 @@ if generate_btn:
             st.session_state[k] = generate_message("autoengage", ae_ctx)
             _meta[k] = {"type": "autoengage", "context": dict(ae_ctx)}
 
-        # Hot prospect
-        if use_hot_prospect and hot_offer:
-            hp_ctx = {
-                **base_ctx,
-                "min_visits": hot_min_visits,
-                "within_days": hot_within_days,
-                "offer": hot_offer,
-            }
-            st.session_state["msg_hot_prospect"] = generate_message("hot_prospect", hp_ctx)
-            _meta["msg_hot_prospect"] = {"type": "hot_prospect", "context": dict(hp_ctx)}
+        # Hot prospect — always generated
+        st.session_state["msg_hot_prospect"] = generate_message("hot_prospect", base_ctx)
+        _meta["msg_hot_prospect"] = {"type": "hot_prospect", "context": dict(base_ctx)}
 
     st.session_state["msg_meta"] = _meta
 
@@ -1359,7 +1330,7 @@ if st.session_state.get("generated"):
                     "Hot Prospect Offer",
                     "Converts frequent visitors who haven't redeemed yet.",
                     "msg_hot_prospect", base_ctx, "hot_prospect",
-                    {"min_visits": hot_min_visits, "within_days": hot_within_days, "offer": hot_offer},
+                    show_regen=False,
                 )
 
     # ── All-in-One view ───────────────────────────────────────────────────────
@@ -1437,5 +1408,5 @@ if st.session_state.get("generated"):
                 "Hot Prospect Offer",
                 "Converts frequent visitors who haven't redeemed yet.",
                 "msg_hot_prospect", base_ctx, "hot_prospect",
-                {"min_visits": hot_min_visits, "within_days": hot_within_days, "offer": hot_offer},
+                show_regen=False,
             )

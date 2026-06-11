@@ -405,40 +405,35 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
 
     # ── HOT PROSPECT ──────────────────────────────────────────────────────────
     elif message_type == "hot_prospect":
-        offer = context.get("offer") or "a special thank-you offer"
-
         sms = [
-            f"Thanks for being a regular at {name}! Here's a thank-you: {offer} ~redeem~",
-            f"You've been coming in a lot — we appreciate it. Enjoy {offer} at {name}: ~redeem~",
-            f"{name} noticed you've been a loyal customer. Here's something just for you: {offer} ~redeem~",
-            f"You're one of our best customers at {name}. Enjoy {offer} on us: ~redeem~",
+            f"Thanks for being a regular at {name}! Your loyalty has earned you something special — claim it: ~redeem~ Stop2Stop Help4Help",
+            f"You've been coming in a lot at {name} — we appreciate it. Here's a VIP thank-you just for you: ~redeem~ Stop2Stop Help4Help",
+            f"{name} noticed your loyalty. Here's something special just for you — claim it: ~redeem~ Stop2Stop Help4Help",
+            f"You're one of our best customers at {name}. We have a VIP offer waiting for you: ~redeem~ Stop2Stop Help4Help",
         ]
 
         mms = [
             (
                 f"We see you've been coming in regularly at {name} — and we want to say thank you.\n\n"
-                f"Because you've been such a loyal customer, we have something special for you: {offer}.\n\n"
+                f"Because you've been such a loyal customer, we have something special waiting for you.\n\n"
                 f"This is our way of recognizing customers who keep showing up. You've earned it. "
-                f"Redeem here: ~redeem~\n\nThank you. It means more than you know."
+                f"Redeem here: ~redeem~"
             ),
             (
                 f"{name} has noticed you're one of our most loyal customers.\n\n"
-                f"That means something to us. To show our appreciation, "
-                f"we'd like to give you: {offer}.\n\n"
-                f"No hoops to jump through — just come in and claim it. "
-                f"Use it here: ~redeem~\n\nThank you for choosing {name} again and again."
+                f"That means something to us. To show our appreciation, we have a VIP offer just for you.\n\n"
+                f"No hoops to jump through — just come in and claim it: ~redeem~\n\n"
+                f"Thank you for choosing {name} again and again."
             ),
             (
-                f"You've been coming in a lot and we haven't said thank you properly.\n\n"
-                f"Consider this your VIP moment at {name}. "
-                f"We're giving you {offer} — just because you've been outstanding.\n\n"
-                f"Come in and claim it anytime: ~redeem~\n\n"
-                f"We're lucky to have customers like you. Thank you for your loyalty."
+                f"You've been coming in consistently and we want to say thank you properly.\n\n"
+                f"Consider this your VIP moment at {name}. We have something special waiting — "
+                f"just because you've been outstanding.\n\n"
+                f"Come in and claim it anytime: ~redeem~\n\nWe're grateful to have customers like you."
             ),
             (
                 f"Not everyone gets this message — you've earned it.\n\n"
-                f"Because of your consistent visits to {name}, "
-                f"we're offering you something special: {offer}.\n\n"
+                f"Because of your consistent visits to {name}, we're offering you something special.\n\n"
                 f"It's our thank-you for being exactly the kind of customer we love. "
                 f"Redeem here: ~redeem~\n\nSee you next time at {name}."
             ),
