@@ -153,70 +153,18 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
 
     # ── TRACKED ───────────────────────────────────────────────────────────────
     elif message_type == "tracked":
-        status = context.get("status_detail", "")
-
-        if program_type == "points-based":
-            sms = [
-                f"{name}: Wash confirmed! Points added to your account. Check balance: [PTS URL]",
-                f"Nice work! Points earned at {name}. You're getting closer to {reward}. See total: [PTS URL]",
-                f"{name}: Visit logged and points added. Track your progress here: [PTS URL]",
-                f"Wash confirmed at {name}! Points are in your account. Balance: [PTS URL]",
-            ]
-            mms = [
-                (
-                    f"Wash confirmed at {name}!\n\n"
-                    f"Points have been added to your account. "
-                    f"Check your current balance here: [PTS URL]\n\n"
-                    f"Every wash adds more. Keep coming back and {reward} will be yours before long. "
-                    f"We'll let you know when you're close.\n\nThanks for choosing us."
-                ),
-                (
-                    f"{name}: Your visit is on the books.\n\n"
-                    f"We added points to your account for today's wash. "
-                    f"See your updated total here: [PTS URL]\n\n"
-                    f"You're making progress toward {reward}. "
-                    f"Stay consistent and you'll get there. We appreciate your business."
-                ),
-                (
-                    f"Visit confirmed at {name}!\n\n"
-                    f"Points earned and added to your account. "
-                    f"Every wash gets you closer to {reward}.\n\n"
-                    f"Track your balance anytime here: [PTS URL] — "
-                    f"we'll also text you when you're close to redeeming. See you next time."
-                ),
-                (
-                    f"Got your wash at {name}!\n\n"
-                    f"Points have been credited to your loyalty account. "
-                    f"View your current balance: [PTS URL]\n\n"
-                    f"Keep the momentum going — {reward} is within reach. "
-                    f"We'll send you a heads-up when you're almost there."
-                ),
-            ]
-        else:
-            sms = [
-                f"Thanks for visiting {name}! ~ls~ earned today, ~lsr~ to go until your reward. Stop2Stop Help4Help",
-                f"Great to see you back at {name}! You earned ~ls~ this visit — only ~lsr~ until your next reward. Stop2Stop Help4Help",
-                f"Thanks for the wash at {name}! ~ls~ credited, ~lsr~ left until your next reward. Stop2Stop Help4Help",
-                f"{name} thanks you for visiting! ~ls~ this visit, ~lsr~ to your next reward. Stop2Stop Help4Help",
-            ]
-            mms = [
-                (
-                    f"Thanks for visiting {name}! You earned ~ls~ today — only ~lsr~ left until your next reward. "
-                    f"Keep washing: [TRACK URL]"
-                ),
-                (
-                    f"Great to see you back at {name}! ~ls~ added this visit. "
-                    f"Just ~lsr~ to go until your reward — track progress: [TRACK URL]"
-                ),
-                (
-                    f"Thanks for the wash at {name}! ~ls~ credited this visit. "
-                    f"You're ~lsr~ away from your next reward. See your progress: [TRACK URL]"
-                ),
-                (
-                    f"{name} thanks you! You earned ~ls~ this visit. "
-                    f"Only ~lsr~ left until your next reward — your next free wash is closer than you think: [TRACK URL]"
-                ),
-            ]
+        sms = [
+            f"Thanks for visiting {name}! ~ls~ earned today, ~lsr~ to go until your reward. Stop2Stop Help4Help",
+            f"Great to see you back at {name}! You earned ~ls~ this visit — only ~lsr~ until your next reward. Stop2Stop Help4Help",
+            f"Thanks for the wash at {name}! ~ls~ credited, ~lsr~ left until your next reward. Stop2Stop Help4Help",
+            f"{name} thanks you for visiting! ~ls~ this visit, ~lsr~ to your next reward. Stop2Stop Help4Help",
+        ]
+        mms = [
+            f"Thanks for visiting {name}! You earned ~ls~ today — only ~lsr~ left until your next reward. Keep washing: [TRACK URL]",
+            f"Great to see you back at {name}! ~ls~ added this visit. Just ~lsr~ to go until your reward — track progress: [TRACK URL]",
+            f"Thanks for the wash at {name}! ~ls~ credited this visit. You're ~lsr~ away from your next reward. See your progress: [TRACK URL]",
+            f"{name} thanks you! You earned ~ls~ this visit. Only ~lsr~ left until your next reward — your next free wash is closer than you think: [TRACK URL]",
+        ]
 
         return _pick(pool_key, mms if mode == "MMS" else sms)
 
