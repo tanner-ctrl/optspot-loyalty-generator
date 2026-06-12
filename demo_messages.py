@@ -194,27 +194,27 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
             ]
         else:
             sms = [
-                f"Thanks for visiting {name}! ~ls~ added today, ~lsr~ total. Stop2Stop Help4Help",
-                f"Great to see you back at {name}! You earned ~ls~ this visit (~lsr~ total). Stop2Stop Help4Help",
-                f"Thanks for the wash at {name}! ~ls~ credited, ~lsr~ on your account. Stop2Stop Help4Help",
-                f"{name} thanks you for visiting! ~ls~ this visit, ~lsr~ total. Stop2Stop Help4Help",
+                f"Thanks for visiting {name}! ~ls~ earned today, ~lsr~ to go until your reward. Stop2Stop Help4Help",
+                f"Great to see you back at {name}! You earned ~ls~ this visit — only ~lsr~ until your next reward. Stop2Stop Help4Help",
+                f"Thanks for the wash at {name}! ~ls~ credited, ~lsr~ left until your next reward. Stop2Stop Help4Help",
+                f"{name} thanks you for visiting! ~ls~ this visit, ~lsr~ to your next reward. Stop2Stop Help4Help",
             ]
             mms = [
                 (
-                    f"Thanks for visiting {name}! You earned ~ls~ today, bringing you to ~lsr~ total. "
-                    f"Keep washing to unlock your rewards — check progress: [TRACK URL]"
+                    f"Thanks for visiting {name}! You earned ~ls~ today — only ~lsr~ left until your next reward. "
+                    f"Keep washing: [TRACK URL]"
                 ),
                 (
-                    f"Great to see you back at {name}! ~ls~ added to your account this visit (~lsr~ total). "
-                    f"Track your progress: [TRACK URL]"
+                    f"Great to see you back at {name}! ~ls~ added this visit. "
+                    f"Just ~lsr~ to go until your reward — track progress: [TRACK URL]"
                 ),
                 (
                     f"Thanks for the wash at {name}! ~ls~ credited this visit. "
-                    f"Your running total: ~lsr~. See your progress anytime: [TRACK URL]"
+                    f"You're ~lsr~ away from your next reward. See your progress: [TRACK URL]"
                 ),
                 (
-                    f"{name} thanks you! You earned ~ls~ this visit (~lsr~ total). "
-                    f"Keep washing — your next reward is closer than you think. Check progress: [TRACK URL]"
+                    f"{name} thanks you! You earned ~ls~ this visit. "
+                    f"Only ~lsr~ left until your next reward — your next free wash is closer than you think: [TRACK URL]"
                 ),
             ]
 
