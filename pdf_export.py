@@ -301,14 +301,23 @@ def _incentives_summary(context: dict, styles: dict, story: list, width: float) 
 
     items = []
 
-    # 1. Check-in offer — first tier
-    tiers = context.get("tiers", [])
-    if tiers:
-        first = tiers[0]
-        visits = first.get("visits", "")
-        reward = first.get("reward", "")
-        if visits and reward:
-            items.append(f"Earn a {reward} after {visits} visits")
+    # 1. Check-in offer — visit-based: first tier; points-based: per-package summary
+    prog_type = context.get("program_type", "visit-based")
+    if prog_type == "visit-based":
+        tiers = context.get("tiers", [])
+        if tiers:
+            first = tiers[0]
+            visits = first.get("visits", "")
+            reward = first.get("reward", "")
+            if visits and reward:
+                items.append(f"Earn a {reward} after {visits} visits")
+    else:
+        for pkg in context.get("wash_packages", []):
+            pkg_name = pkg.get("name", "")
+            earn = pkg.get("earn_points", "")
+            redeem = pkg.get("redeem_cost", "")
+            if pkg_name and earn and redeem:
+                items.append(f"{pkg_name}: earn {earn} pt per wash, redeem at {redeem} pts")
 
     # 2–5. HPO fields — only when HPO is enabled
     if context.get("hpo_enabled", True):

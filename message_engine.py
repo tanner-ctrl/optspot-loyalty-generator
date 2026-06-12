@@ -39,18 +39,12 @@ def _build_program_details(context: dict) -> str:
             return "\n".join(lines)
         return ""
     else:
-        packages = context.get("packages", [])
-        points_to_redeem = context.get("points_to_redeem", "")
-        reward = context.get("reward_description", "")
+        wash_packages = context.get("wash_packages", [])
         lines = []
-        if packages:
-            lines.append("Wash packages and points earned:")
-            for p in packages:
-                lines.append(f"  - {p['name']}: {p['points']} points")
-        if points_to_redeem:
-            lines.append(f"Points needed to redeem: {points_to_redeem}")
-        if reward:
-            lines.append(f"Reward: {reward}")
+        if wash_packages:
+            lines.append("Wash packages (earn pts / redeem cost):")
+            for p in wash_packages:
+                lines.append(f"  - {p['name']}: earn {p['earn_points']} pt, redeem at {p['redeem_cost']} pts")
         return "\n".join(lines)
 
 
@@ -95,6 +89,8 @@ def generate_message(message_type: str, context: dict, temperature: float = 0.7,
         "reward_description": context.get("reward_description", ""),
         "days_since_visit": context.get("days_since_visit", ""),
         "offer": context.get("offer", ""),
+        "package_name": context.get("package_name", ""),
+        "redeem_cost": context.get("redeem_cost", ""),
         "signup_reward_block": signup_reward_block,
         "starter_unit": starter_unit,
     }

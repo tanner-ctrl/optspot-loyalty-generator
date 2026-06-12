@@ -274,46 +274,86 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
 
     # ── REWARD ────────────────────────────────────────────────────────────────
     elif message_type == "reward":
-        reward_desc = context.get("reward_description") or reward
+        if context.get("package_name"):
+            # Points-based: per-package reward message
+            pkg_name = context.get("package_name", "")
+            redeem_cost = context.get("redeem_cost", "")
 
-        sms = [
-            f"You earned it! Your {reward_desc} is ready at {name}. Redeem here: ~redeem~",
-            f"{name}: {reward_desc} unlocked! Come in and claim it: ~redeem~",
-            f"Great news from {name} — you've earned a {reward_desc}. Use it here: ~redeem~",
-            f"You hit your goal at {name}! Your {reward_desc} is waiting: ~redeem~",
-        ]
+            sms = [
+                f"You've earned a free {pkg_name} wash at {name}! Redeem here: ~redeem~ Stop2Stop Help4Help",
+                f"{name}: {pkg_name} reward unlocked — you hit {redeem_cost} pts! Claim it: ~redeem~ Stop2Stop Help4Help",
+                f"Congrats! Free {pkg_name} wash at {name} is ready. Redeem: ~redeem~ Stop2Stop Help4Help",
+                f"You did it! {pkg_name} reward earned at {name}. Use it: ~redeem~ Stop2Stop Help4Help",
+            ]
 
-        mms = [
-            (
-                f"Congratulations — you earned it!\n\n"
-                f"Your {reward_desc} is ready and waiting at {name}. "
-                f"This is your reward for being a loyal customer, and you earned every bit of it.\n\n"
-                f"Redeem it here: ~redeem~\n\n"
-                f"Come in anytime — your reward will be on file. Thanks for choosing us."
-            ),
-            (
-                f"{name}: Your reward is ready!\n\n"
-                f"You've reached your goal and earned a {reward_desc}. "
-                f"We're glad you kept coming back — your loyalty means a lot to us.\n\n"
-                f"Claim it here: ~redeem~\n\n"
-                f"No rush — come in when you're ready and we'll take care of the rest."
-            ),
-            (
-                f"Big news from {name}!\n\n"
-                f"You've earned a {reward_desc}. You put in the visits "
-                f"and now it's time to enjoy the reward.\n\n"
-                f"Redeem here: ~redeem~\n\n"
-                f"Your reward doesn't expire right away — come in when it works for you. "
-                f"Thank you for your loyalty."
-            ),
-            (
-                f"Well done — your {reward_desc} is ready at {name}.\n\n"
-                f"You earned this through consistent visits. "
-                f"It's our way of saying thank you for choosing us again and again.\n\n"
-                f"Use your reward here: ~redeem~\n\n"
-                f"We hope to see you soon. Thanks for being part of the {name} loyalty program."
-            ),
-        ]
+            mms = [
+                (
+                    f"Congratulations — you earned it!\n\n"
+                    f"Your free {pkg_name} wash at {name} is ready to claim. "
+                    f"You reached {redeem_cost} points and unlocked your reward.\n\n"
+                    f"Redeem it here: ~redeem~\n\nThank you for your loyalty."
+                ),
+                (
+                    f"{name}: Your {pkg_name} reward is ready!\n\n"
+                    f"You hit {redeem_cost} points and earned a free {pkg_name} wash. "
+                    f"We're glad you kept coming back — it means a lot to us.\n\n"
+                    f"Claim it here: ~redeem~\n\nNo rush — come in when you're ready."
+                ),
+                (
+                    f"Big news from {name}!\n\n"
+                    f"You've earned a free {pkg_name} wash by reaching {redeem_cost} points. "
+                    f"You put in the visits and now it's time to enjoy the reward.\n\n"
+                    f"Redeem here: ~redeem~\n\nThank you for your loyalty."
+                ),
+                (
+                    f"Well done — your free {pkg_name} wash is ready at {name}.\n\n"
+                    f"You earned this by hitting {redeem_cost} points. "
+                    f"It's our way of saying thank you for choosing us again and again.\n\n"
+                    f"Use your reward here: ~redeem~\n\nSee you soon!"
+                ),
+            ]
+        else:
+            # Visit-based reward message
+            reward_desc = context.get("reward_description") or reward
+
+            sms = [
+                f"You earned it! Your {reward_desc} is ready at {name}. Redeem here: ~redeem~",
+                f"{name}: {reward_desc} unlocked! Come in and claim it: ~redeem~",
+                f"Great news from {name} — you've earned a {reward_desc}. Use it here: ~redeem~",
+                f"You hit your goal at {name}! Your {reward_desc} is waiting: ~redeem~",
+            ]
+
+            mms = [
+                (
+                    f"Congratulations — you earned it!\n\n"
+                    f"Your {reward_desc} is ready and waiting at {name}. "
+                    f"This is your reward for being a loyal customer, and you earned every bit of it.\n\n"
+                    f"Redeem it here: ~redeem~\n\n"
+                    f"Come in anytime — your reward will be on file. Thanks for choosing us."
+                ),
+                (
+                    f"{name}: Your reward is ready!\n\n"
+                    f"You've reached your goal and earned a {reward_desc}. "
+                    f"We're glad you kept coming back — your loyalty means a lot to us.\n\n"
+                    f"Claim it here: ~redeem~\n\n"
+                    f"No rush — come in when you're ready and we'll take care of the rest."
+                ),
+                (
+                    f"Big news from {name}!\n\n"
+                    f"You've earned a {reward_desc}. You put in the visits "
+                    f"and now it's time to enjoy the reward.\n\n"
+                    f"Redeem here: ~redeem~\n\n"
+                    f"Your reward doesn't expire right away — come in when it works for you. "
+                    f"Thank you for your loyalty."
+                ),
+                (
+                    f"Well done — your {reward_desc} is ready at {name}.\n\n"
+                    f"You earned this through consistent visits. "
+                    f"It's our way of saying thank you for choosing us again and again.\n\n"
+                    f"Use your reward here: ~redeem~\n\n"
+                    f"We hope to see you soon. Thanks for being part of the {name} loyalty program."
+                ),
+            ]
 
         return _pick(pool_key, mms if mode == "MMS" else sms)
 

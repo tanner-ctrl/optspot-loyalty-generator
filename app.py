@@ -103,7 +103,7 @@ _SCALAR_PERSIST_KEYS = [
     "car_wash_name", "program_type",
     "signup_reward_enabled", "signup_reward", "signup_reward_expires_days",
     "visit_tracked_enabled",
-    "points_to_redeem", "reward_description", "default_mode",
+    "default_mode",
     "view_mode",
     "hpo_enabled",
     "hpo_membership_offer", "hpo_timeframe_days", "hpo_min_visits", "hpo_max_checkins",
@@ -148,19 +148,23 @@ def _save_to_storage():
             }
             for i in range(n_tiers)
         ]
-        n_pkgs = len(st.session_state.get("packages", []))
-        config["packages"] = [
+        n_wps = len(st.session_state.get("wash_packages", []))
+        config["wash_packages"] = [
             {
                 "name": st.session_state.get(
-                    f"pkg_name_{i}",
-                    st.session_state.packages[i]["name"] if i < n_pkgs else "",
+                    f"wash_pkg_name_{i}",
+                    st.session_state.wash_packages[i]["name"] if i < n_wps else "",
                 ),
-                "points": st.session_state.get(
-                    f"pkg_pts_{i}",
-                    st.session_state.packages[i]["points"] if i < n_pkgs else 10,
+                "earn_points": st.session_state.get(
+                    f"wash_pkg_earn_{i}",
+                    st.session_state.wash_packages[i]["earn_points"] if i < n_wps else 1,
+                ),
+                "redeem_cost": st.session_state.get(
+                    f"wash_pkg_redeem_{i}",
+                    st.session_state.wash_packages[i]["redeem_cost"] if i < n_wps else 4,
                 ),
             }
-            for i in range(n_pkgs)
+            for i in range(n_wps)
         ]
         n_ae = len(st.session_state.get("auto_engage", []))
         config["auto_engage"] = [
@@ -537,52 +541,52 @@ with st.sidebar:
 
         st.button("+ Add tier", on_click=_add_tier)
 
-    # ── Points-based packages ──
+    # ── Points-based wash packages ──
     else:
-        st.markdown('<p class="sidebar-section">Wash Packages</p>', unsafe_allow_html=True)
-        if "packages" not in st.session_state:
-            st.session_state.packages = [{"name": "Basic Wash", "points": 10}]
+        st.markdown('<p class="sidebar-section">💧 Wash Packages</p>', unsafe_allow_html=True)
+        st.caption("Configure each wash package customers can purchase. Earn points and redeem cost are unique per package.")
+        if "wash_packages" not in st.session_state:
+            st.session_state.wash_packages = [
+                {"name": "Basic", "earn_points": 1, "redeem_cost": 4},
+                {"name": "Ultimate", "earn_points": 3, "redeem_cost": 12},
+                {"name": "Platinum", "earn_points": 5, "redeem_cost": 20},
+            ]
 
-        pkgs_to_delete = []
-        for i, pkg in enumerate(st.session_state.packages):
+        wps_to_delete = []
+        for i, pkg in enumerate(st.session_state.wash_packages):
             with st.container():
-                col1, col2, col3 = st.columns([3, 2, 1])
+                col1, col2, col3, col4 = st.columns([3, 2, 2, 0.5])
                 with col1:
                     pkg["name"] = st.text_input(
-                        "Package name", value=pkg["name"],
-                        key=f"pkg_name_{i}", on_change=_save_to_storage,
+                        "Package Name", value=pkg["name"],
+                        key=f"wash_pkg_name_{i}", on_change=_save_to_storage,
                     )
                 with col2:
-                    pkg["points"] = st.number_input(
-                        "Points earned", min_value=1, value=pkg["points"],
-                        key=f"pkg_pts_{i}", on_change=_save_to_storage,
+                    pkg["earn_points"] = st.number_input(
+                        "Earn Points", min_value=1, value=pkg["earn_points"],
+                        key=f"wash_pkg_earn_{i}", on_change=_save_to_storage,
                     )
                 with col3:
+                    pkg["redeem_cost"] = st.number_input(
+                        "Redeem Cost", min_value=1, value=pkg["redeem_cost"],
+                        key=f"wash_pkg_redeem_{i}", on_change=_save_to_storage,
+                    )
+                with col4:
                     st.write("")
                     st.write("")
-                    if st.button("✕", key=f"del_pkg_{i}") and len(st.session_state.packages) > 1:
-                        pkgs_to_delete.append(i)
+                    if st.button("✕", key=f"del_wp_{i}") and len(st.session_state.wash_packages) > 1:
+                        wps_to_delete.append(i)
 
-        for i in reversed(pkgs_to_delete):
-            st.session_state.packages.pop(i)
-        if pkgs_to_delete:
+        for i in reversed(wps_to_delete):
+            st.session_state.wash_packages.pop(i)
+        if wps_to_delete:
             _save_to_storage()
 
-        def _add_package():
-            st.session_state.packages.append({"name": "", "points": 10})
+        def _add_wash_package():
+            st.session_state.wash_packages.append({"name": "", "earn_points": 1, "redeem_cost": 4})
             _save_to_storage()
 
-        st.button("+ Add package", on_click=_add_package)
-
-        st.divider()
-        points_to_redeem = st.number_input(
-            "Points needed to redeem", min_value=1, value=50,
-            key="points_to_redeem", on_change=_save_to_storage,
-        )
-        reward_description = st.text_input(
-            "Reward description", placeholder="e.g. Free Deluxe Wash",
-            key="reward_description", on_change=_save_to_storage,
-        )
+        st.button("+ Add wash package", on_click=_add_wash_package)
 
     st.divider()
 
@@ -773,9 +777,7 @@ def build_base_context():
     if program_type == "visit-based":
         ctx["tiers"] = st.session_state.tiers
     else:
-        ctx["packages"] = st.session_state.packages
-        ctx["points_to_redeem"] = points_to_redeem
-        ctx["reward_description"] = reward_description
+        ctx["wash_packages"] = st.session_state.get("wash_packages", [])
     return ctx
 
 
@@ -987,9 +989,17 @@ if generate_btn:
                 st.session_state[k] = generate_message("reward", reward_ctx)
                 _meta[k] = {"type": "reward", "context": dict(reward_ctx)}
         else:
-            reward_ctx = {**base_ctx, "reward_description": reward_description or "your reward"}
-            st.session_state["msg_reward_0"] = generate_message("reward", reward_ctx)
-            _meta["msg_reward_0"] = {"type": "reward", "context": dict(reward_ctx)}
+            for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
+                reward_ctx = {
+                    **base_ctx,
+                    "package_name": pkg["name"],
+                    "earn_points": pkg["earn_points"],
+                    "redeem_cost": pkg["redeem_cost"],
+                    "reward_description": pkg["name"],
+                }
+                k = f"msg_reward_pkg_{i}"
+                st.session_state[k] = generate_message("reward", reward_ctx)
+                _meta[k] = {"type": "reward", "context": dict(reward_ctx)}
 
         # Auto-engage
         for i, ae in enumerate(st.session_state.auto_engage):
@@ -1038,7 +1048,7 @@ if st.session_state.get("generated"):
     if program_type == "visit-based":
         msg_keys += [f"msg_reward_{i}" for i in range(len(st.session_state.tiers))]
     else:
-        msg_keys.append("msg_reward_0")
+        msg_keys += [f"msg_reward_pkg_{i}" for i in range(len(st.session_state.get("wash_packages", [])))]
     msg_keys += [f"msg_ae_{i}" for i in range(len(st.session_state.auto_engage))]
     if st.session_state.get("msg_hot_prospect"):
         msg_keys.append("msg_hot_prospect")
@@ -1085,14 +1095,16 @@ if st.session_state.get("generated"):
                         "image_data": _resolve_image(key)[0],
                     })
         else:
-            if "msg_reward_0" in st.session_state:
-                msgs["rewards"].append({
-                    "label": "Reward Unlock",
-                    "text": st.session_state["msg_reward_0"],
-                    "strategy": "Celebrates reaching redemption threshold and drives action.",
-                    "mode": st.session_state.get("mode_msg_reward_0", "SMS"),
-                    "image_data": _resolve_image("msg_reward_0")[0],
-                })
+            for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
+                key = f"msg_reward_pkg_{i}"
+                if key in st.session_state:
+                    msgs["rewards"].append({
+                        "label": f"{pkg['name']} Reward",
+                        "text": st.session_state[key],
+                        "strategy": f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
+                        "mode": st.session_state.get(f"mode_{key}", "SMS"),
+                        "image_data": _resolve_image(key)[0],
+                    })
         for i, ae in enumerate(st.session_state.get("auto_engage", [])):
             key = f"msg_ae_{i}"
             if key in st.session_state:
@@ -1142,6 +1154,7 @@ if st.session_state.get("generated"):
                 "signup_reward": st.session_state.get("signup_reward", ""),
                 "signup_reward_expires_days": st.session_state.get("signup_reward_expires_days", 7),
                 "tiers": st.session_state.get("tiers", []) if program_type == "visit-based" else [],
+                "wash_packages": st.session_state.get("wash_packages", []) if program_type == "points-based" else [],
                 "visit_tracked_enabled": st.session_state.get("visit_tracked_enabled", True),
                 "hpo_enabled": st.session_state.get("hpo_enabled", True),
                 "hpo_membership_offer": st.session_state.get("hpo_membership_offer", ""),
@@ -1312,12 +1325,13 @@ if st.session_state.get("generated"):
                         {"reward_description": tier["reward"]},
                     )
             else:
-                render_message_card(
-                    "Reward Unlock",
-                    "Celebrates reaching redemption threshold and drives action.",
-                    "msg_reward_0", base_ctx, "reward",
-                    {"reward_description": reward_description or "your reward"},
-                )
+                for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
+                    render_message_card(
+                        f"{pkg['name']} Reward Message",
+                        f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
+                        f"msg_reward_pkg_{i}", base_ctx, "reward",
+                        {"package_name": pkg["name"], "earn_points": pkg["earn_points"], "redeem_cost": pkg["redeem_cost"], "reward_description": pkg["name"]},
+                    )
         _ti += 1
 
         with tabs[_ti]:
@@ -1390,12 +1404,13 @@ if st.session_state.get("generated"):
                     {"reward_description": tier["reward"]},
                 )
         else:
-            render_message_card(
-                "Reward Unlock",
-                "Celebrates reaching redemption threshold and drives action.",
-                "msg_reward_0", base_ctx, "reward",
-                {"reward_description": reward_description or "your reward"},
-            )
+            for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
+                render_message_card(
+                    f"{pkg['name']} Reward Message",
+                    f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
+                    f"msg_reward_pkg_{i}", base_ctx, "reward",
+                    {"package_name": pkg["name"], "earn_points": pkg["earn_points"], "redeem_cost": pkg["redeem_cost"], "reward_description": pkg["name"]},
+                )
 
         st.divider()
         _section_head("🔁 Auto-Engage")
