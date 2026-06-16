@@ -212,10 +212,50 @@ def _img_b64(path: str) -> str:
 
 st.markdown("""
 <style>
+/* === Brand Variables === */
+:root {
+    --optspot-navy: #264078;
+    --optspot-blue: #23A3EA;
+    --optspot-bg: #0E1729;
+    --optspot-card: #1A2540;
+    --optspot-text: #FFFFFF;
+    --optspot-muted: #8FA3C2;
+}
+
 /* === Layout === */
 .main .block-container {
     padding-top: 1.5rem;
     padding-bottom: 3rem;
+}
+
+/* === App header === */
+.optspot-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0 16px 0;
+    border-bottom: 2px solid var(--optspot-blue);
+    margin-bottom: 24px;
+}
+.optspot-header-logo img {
+    height: 50px;
+    display: block;
+}
+.optspot-header-title {
+    text-align: right;
+}
+.optspot-header-title h1 {
+    color: var(--optspot-text) !important;
+    font-size: 1.45rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+}
+.optspot-header-title p {
+    color: var(--optspot-muted) !important;
+    font-size: 0.82rem !important;
+    margin: 4px 0 0 0 !important;
+    letter-spacing: 0.04em !important;
 }
 
 /* === Sidebar === */
@@ -229,58 +269,84 @@ st.markdown("""
 }
 
 .sidebar-section {
-    color: #23A3EA !important;
+    color: var(--optspot-blue) !important;
     font-size: 0.7rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.12em !important;
     text-transform: uppercase !important;
     margin: 1.1rem 0 0.15rem 0 !important;
-    padding: 0 !important;
+    padding: 2px 0 2px 8px !important;
+    border-left: 3px solid var(--optspot-navy) !important;
 }
 
-/* === Primary button (Generate) === */
+/* === Primary buttons (Generate, Regenerate, Submit) === */
 button[data-testid="baseButton-primary"] {
-    background-color: #264078 !important;
+    background-color: var(--optspot-blue) !important;
     color: #FFFFFF !important;
     border: none !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     font-weight: 600 !important;
-    transition: background-color 0.2s ease !important;
+    transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease !important;
+    box-shadow: 0 2px 6px rgba(35, 163, 234, 0.25) !important;
 }
 button[data-testid="baseButton-primary"]:hover {
-    background-color: #23A3EA !important;
+    background-color: #1a8fd1 !important;
     color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(35, 163, 234, 0.4) !important;
 }
 button[data-testid="baseButton-primary"]:active {
-    background-color: #1d3260 !important;
+    background-color: #1578b3 !important;
+    transform: translateY(0) !important;
 }
 
-/* === Secondary / utility buttons === */
+/* === Secondary / utility buttons (Reset, ×) === */
 button[data-testid="baseButton-secondary"] {
     background-color: transparent !important;
     border: 1px solid #264078 !important;
-    color: #23A3EA !important;
-    border-radius: 8px !important;
+    color: var(--optspot-muted) !important;
+    border-radius: 4px !important;
     font-weight: 500 !important;
     transition: all 0.18s ease !important;
 }
 button[data-testid="baseButton-secondary"]:hover {
-    background-color: #264078 !important;
+    background-color: rgba(38, 64, 120, 0.35) !important;
     color: #FFFFFF !important;
-    border-color: #264078 !important;
+    border-color: var(--optspot-blue) !important;
+}
+
+/* === PDF / Download button — prominent === */
+.stDownloadButton > button {
+    background-color: var(--optspot-blue) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    letter-spacing: 0.02em !important;
+    padding: 0.6rem 1.2rem !important;
+    box-shadow: 0 3px 10px rgba(35, 163, 234, 0.35) !important;
+    transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease !important;
+}
+.stDownloadButton > button:hover {
+    background-color: #1a8fd1 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 16px rgba(35, 163, 234, 0.5) !important;
 }
 
 /* === Message cards === */
 [data-testid="stVerticalBlockBorderWrapper"] {
-    background-color: #1A2847 !important;
-    border: 1px solid #264078 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45) !important;
+    background-color: var(--optspot-card) !important;
+    border: 1px solid #234062 !important;
+    border-radius: 8px !important;
+    padding: 4px 4px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
     margin-bottom: 1rem !important;
     transition: box-shadow 0.2s ease !important;
 }
 [data-testid="stVerticalBlockBorderWrapper"]:hover {
-    box-shadow: 0 4px 20px rgba(35, 163, 234, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(35, 163, 234, 0.12) !important;
 }
 
 /* === Tabs === */
@@ -291,9 +357,9 @@ button[data-testid="baseButton-secondary"]:hover {
     padding-bottom: 0 !important;
 }
 .stTabs [data-baseweb="tab"] {
-    color: #7A99C4 !important;
+    color: var(--optspot-muted) !important;
     background-color: transparent !important;
-    border-radius: 8px 8px 0 0 !important;
+    border-radius: 6px 6px 0 0 !important;
     padding: 0.55rem 1.1rem !important;
     font-weight: 500 !important;
     border: none !important;
@@ -305,12 +371,13 @@ button[data-testid="baseButton-secondary"]:hover {
     background-color: rgba(38, 64, 120, 0.35) !important;
 }
 .stTabs [aria-selected="true"] {
-    color: #23A3EA !important;
-    background-color: #1A2847 !important;
+    color: var(--optspot-blue) !important;
+    font-weight: 700 !important;
+    background-color: rgba(26, 37, 64, 0.6) !important;
 }
 .stTabs [data-baseweb="tab-highlight"] {
-    background-color: #23A3EA !important;
-    height: 2px !important;
+    background-color: var(--optspot-blue) !important;
+    height: 3px !important;
 }
 .stTabs [data-baseweb="tab-panel"] {
     padding-top: 1.25rem !important;
@@ -324,18 +391,29 @@ button[data-testid="baseButton-secondary"]:hover {
     background-color: #0A1225 !important;
     color: #E8EDF5 !important;
     border: 1px solid #264078 !important;
-    border-radius: 8px !important;
-    transition: border-color 0.15s ease !important;
+    border-radius: 6px !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 .stTextInput input:focus,
 .stTextArea textarea:focus,
 .stNumberInput input:focus {
-    border-color: #23A3EA !important;
+    border-color: var(--optspot-blue) !important;
     box-shadow: 0 0 0 2px rgba(35, 163, 234, 0.2) !important;
+    outline: none !important;
 }
 .stTextInput input::placeholder,
 .stTextArea textarea::placeholder {
     color: #3D5573 !important;
+}
+
+/* === Toggle switches — ON state in bright blue === */
+[data-testid="stToggle"] label span[data-checked="true"],
+.stToggle span[aria-checked="true"] {
+    background-color: var(--optspot-blue) !important;
+}
+[role="switch"][aria-checked="true"] {
+    background-color: var(--optspot-blue) !important;
+    border-color: var(--optspot-blue) !important;
 }
 
 /* === Labels === */
@@ -397,6 +475,14 @@ pre {
     border-radius: 8px !important;
 }
 
+/* === Spinner — bright blue === */
+.stSpinner > div {
+    border-top-color: var(--optspot-blue) !important;
+}
+[data-testid="stSpinner"] svg circle {
+    stroke: var(--optspot-blue) !important;
+}
+
 /* === Scrollbar === */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: #0F1A35; }
@@ -424,18 +510,15 @@ pre {
     margin-right: 0.5rem !important;
 }
 
-/* === Download PDF button === */
-.stDownloadButton > button {
-    background-color: #264078 !important;
-    color: #FFFFFF !important;
-    border: none !important;
-    border-radius: 8px !important;
-    font-weight: 600 !important;
-    transition: background-color 0.2s ease !important;
-}
-.stDownloadButton > button:hover {
-    background-color: #23A3EA !important;
-    color: #FFFFFF !important;
+/* === App footer === */
+.optspot-footer {
+    border-top: 1px solid var(--optspot-navy);
+    margin-top: 48px;
+    padding: 14px 0 8px 0;
+    text-align: center;
+    color: var(--optspot-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -750,16 +833,17 @@ if is_demo_mode():
         unsafe_allow_html=True,
     )
 
+_main_logo_b64 = _img_b64("assets/optspot_logo.png")
 st.markdown(
-    """<div style="margin-bottom:4px;">
-         <h2 style="color:#E8EDF5;font-weight:700;margin:0;font-size:1.55rem;line-height:1.3;">
-           OptSpot Loyalty Message Generator
-         </h2>
-         <p style="color:#7A99C4;margin:5px 0 0 0;font-size:0.88rem;">
-           Generate SMS messages for car wash loyalty programs — powered by Claude.
-         </p>
-       </div>
-       <hr style="border:none;border-top:1px solid #264078;margin:14px 0 24px 0;" />""",
+    f"""<div class="optspot-header">
+          <div class="optspot-header-logo">
+            <img src="data:image/png;base64,{_main_logo_b64}" style="height:50px;display:block;" />
+          </div>
+          <div class="optspot-header-title">
+            <h1>Loyalty Message Generator</h1>
+            <p>Configure &rarr; Generate &rarr; Approve</p>
+          </div>
+        </div>""",
     unsafe_allow_html=True,
 )
 
@@ -1437,3 +1521,8 @@ if st.session_state.get("generated"):
                 "msg_hot_prospect", base_ctx, "hot_prospect",
                 show_regen=False,
             )
+
+st.markdown(
+    """<div class="optspot-footer">OptSpot Internal Prototype &bull; For team use only</div>""",
+    unsafe_allow_html=True,
+)
