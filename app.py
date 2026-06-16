@@ -237,8 +237,14 @@ st.markdown("""
     border-bottom: 2px solid var(--optspot-blue);
     margin-bottom: 24px;
 }
+.optspot-header-logo {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-block;
+}
 .optspot-header-logo img {
-    height: 50px;
+    height: 48px;
     display: block;
 }
 .optspot-header-title {
@@ -837,7 +843,7 @@ _main_logo_b64 = _img_b64("assets/optspot_logo.png")
 st.markdown(
     f"""<div class="optspot-header">
           <div class="optspot-header-logo">
-            <img src="data:image/png;base64,{_main_logo_b64}" style="height:50px;display:block;" />
+            <img src="data:image/png;base64,{_main_logo_b64}" style="height:48px;display:block;" />
           </div>
           <div class="optspot-header-title">
             <h1>Loyalty Message Generator</h1>
@@ -1440,7 +1446,6 @@ if st.session_state.get("generated"):
                     "Hot Prospect Offer",
                     "Converts frequent visitors who haven't redeemed yet.",
                     "msg_hot_prospect", base_ctx, "hot_prospect",
-                    show_regen=False,
                 )
 
     # ── All-in-One view ───────────────────────────────────────────────────────
@@ -1519,7 +1524,6 @@ if st.session_state.get("generated"):
                 "Hot Prospect Offer",
                 "Converts frequent visitors who haven't redeemed yet.",
                 "msg_hot_prospect", base_ctx, "hot_prospect",
-                show_regen=False,
             )
 
 st.markdown(
