@@ -50,9 +50,9 @@ def _build_program_details(context: dict) -> str:
 
 def get_hpo_cta(execution_type: str) -> str:
     if execution_type == "link":
-        return "Claim here: [HPO LINK]"
+        return "Claim here: [Ecomm LINK]"
     elif execution_type == "onsite":
-        return "Visit us in-store to redeem"
+        return "Stop by to redeem this offer in-store."
     else:  # "redeem"
         return "Redeem here: ~redeem~"
 

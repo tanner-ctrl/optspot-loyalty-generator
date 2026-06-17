@@ -340,9 +340,9 @@ def _incentives_summary(context: dict, styles: dict, story: list, width: float) 
         hpo_exec = context.get("hpo_execution")
         if hpo_exec:
             _hpo_exec_labels = {
-                "link": "Link to ecommerce",
-                "onsite": "On-site redemption",
-                "redeem": "Hard offer",
+                "link": "Link to ecommerce ([Ecomm LINK])",
+                "onsite": "On-site redemption (in-store only)",
+                "redeem": "Hard offer (~redeem~)",
             }
             items.append(f"HPO Execution: {_hpo_exec_labels.get(hpo_exec, hpo_exec)}")
 

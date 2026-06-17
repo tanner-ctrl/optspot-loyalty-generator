@@ -784,7 +784,7 @@ with st.sidebar:
             format_func=lambda x: {
                 "link": "Link to ecommerce",
                 "onsite": "On-site redemption",
-                "redeem": "Hard offer (~redeem~)",
+                "redeem": "Hard offer (redeem code)",
             }[x],
             index=_hpo_exec_opts.index(st.session_state.get("hpo_execution", "redeem")),
             key="hpo_execution",
