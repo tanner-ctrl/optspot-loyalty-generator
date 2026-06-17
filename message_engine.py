@@ -139,5 +139,6 @@ def generate_message(message_type: str, context: dict, temperature: float = 0.7,
         message = message.replace("~ls~", "~custom3~")
         message = message.replace("~lsr~", "~custom4~")
         message = message.replace("visit(s)", "point(s)")
+        message = message.replace("visits", "points")
 
     return message
