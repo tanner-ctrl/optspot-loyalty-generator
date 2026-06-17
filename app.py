@@ -107,6 +107,8 @@ _SCALAR_PERSIST_KEYS = [
     "view_mode",
     "hpo_enabled",
     "hpo_membership_offer", "hpo_timeframe_days", "hpo_min_visits", "hpo_max_checkins",
+    "hpo_execution",
+    "points_rewards_enabled",
 ]
 
 
@@ -677,6 +679,15 @@ with st.sidebar:
 
         st.button("+ Add wash package", on_click=_add_wash_package)
 
+        st.divider()
+        st.toggle(
+            "Enable Rewards messages",
+            value=st.session_state.get("points_rewards_enabled", False),
+            key="points_rewards_enabled",
+            on_change=_save_to_storage,
+        )
+        st.caption("Off by default — OptSpot doesn't host rewards messages for points programs unless requested by the client.")
+
     st.divider()
 
     # ── Auto-engage messages ──
@@ -766,6 +777,21 @@ with st.sidebar:
             "HPO Maximum Check-ins", min_value=1, value=st.session_state.get("hpo_max_checkins", 10),
             key="hpo_max_checkins", on_change=_save_to_storage,
         )
+        _hpo_exec_opts = ["link", "onsite", "redeem"]
+        st.radio(
+            "HPO Execution Type",
+            options=_hpo_exec_opts,
+            format_func=lambda x: {
+                "link": "Link to ecommerce",
+                "onsite": "On-site redemption",
+                "redeem": "Hard offer (~redeem~)",
+            }[x],
+            index=_hpo_exec_opts.index(st.session_state.get("hpo_execution", "redeem")),
+            key="hpo_execution",
+            horizontal=False,
+            on_change=_save_to_storage,
+        )
+        st.caption("How the customer redeems the HPO offer.")
 
     st.divider()
     generate_btn = st.button("Generate Messages", type="primary", use_container_width=True)
@@ -1106,8 +1132,9 @@ if generate_btn:
 
         # Hot prospect — only when HPO is enabled
         if st.session_state.get("hpo_enabled", True):
-            st.session_state["msg_hot_prospect"] = generate_message("hot_prospect", base_ctx)
-            _meta["msg_hot_prospect"] = {"type": "hot_prospect", "context": dict(base_ctx)}
+            hp_ctx = {**base_ctx, "hpo_execution": st.session_state.get("hpo_execution", "redeem")}
+            st.session_state["msg_hot_prospect"] = generate_message("hot_prospect", hp_ctx)
+            _meta["msg_hot_prospect"] = {"type": "hot_prospect", "context": dict(hp_ctx)}
         else:
             st.session_state.pop("msg_hot_prospect", None)
 
@@ -1131,14 +1158,19 @@ if st.session_state.get("generated"):
 
     # Count messages for display
     _vt_on = st.session_state.get("visit_tracked_enabled", True)
+    _rewards_on = (
+        program_type == "visit-based"
+        or st.session_state.get("points_rewards_enabled", False)
+    )
     msg_keys = ["msg_welcome"]
     if _vt_on:
         msg_keys.append("msg_tracked")
     msg_keys.append("msg_progress")
-    if program_type == "visit-based":
-        msg_keys += [f"msg_reward_{i}" for i in range(len(st.session_state.tiers))]
-    else:
-        msg_keys += [f"msg_reward_pkg_{i}" for i in range(len(st.session_state.get("wash_packages", [])))]
+    if _rewards_on:
+        if program_type == "visit-based":
+            msg_keys += [f"msg_reward_{i}" for i in range(len(st.session_state.tiers))]
+        else:
+            msg_keys += [f"msg_reward_pkg_{i}" for i in range(len(st.session_state.get("wash_packages", [])))]
     msg_keys += [f"msg_ae_{i}" for i in range(len(st.session_state.auto_engage))]
     if st.session_state.get("msg_hot_prospect"):
         msg_keys.append("msg_hot_prospect")
@@ -1173,28 +1205,29 @@ if st.session_state.get("generated"):
                 "mode": st.session_state.get("mode_msg_progress", "SMS"),
                 "image_data": _resolve_image("msg_progress")[0],
             }
-        if program_type == "visit-based":
-            for i, tier in enumerate(st.session_state.get("tiers", [])):
-                key = f"msg_reward_{i}"
-                if key in st.session_state:
-                    msgs["rewards"].append({
-                        "label": f"Tier {i + 1} — {tier['reward']}",
-                        "text": st.session_state[key],
-                        "strategy": f"Celebrates earning {tier['reward']} and drives redemption.",
-                        "mode": st.session_state.get(f"mode_{key}", "SMS"),
-                        "image_data": _resolve_image(key)[0],
-                    })
-        else:
-            for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
-                key = f"msg_reward_pkg_{i}"
-                if key in st.session_state:
-                    msgs["rewards"].append({
-                        "label": f"{pkg['name']} Reward",
-                        "text": st.session_state[key],
-                        "strategy": f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
-                        "mode": st.session_state.get(f"mode_{key}", "SMS"),
-                        "image_data": _resolve_image(key)[0],
-                    })
+        if _rewards_on:
+            if program_type == "visit-based":
+                for i, tier in enumerate(st.session_state.get("tiers", [])):
+                    key = f"msg_reward_{i}"
+                    if key in st.session_state:
+                        msgs["rewards"].append({
+                            "label": f"Tier {i + 1} — {tier['reward']}",
+                            "text": st.session_state[key],
+                            "strategy": f"Celebrates earning {tier['reward']} and drives redemption.",
+                            "mode": st.session_state.get(f"mode_{key}", "SMS"),
+                            "image_data": _resolve_image(key)[0],
+                        })
+            else:
+                for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
+                    key = f"msg_reward_pkg_{i}"
+                    if key in st.session_state:
+                        msgs["rewards"].append({
+                            "label": f"{pkg['name']} Reward",
+                            "text": st.session_state[key],
+                            "strategy": f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
+                            "mode": st.session_state.get(f"mode_{key}", "SMS"),
+                            "image_data": _resolve_image(key)[0],
+                        })
         for i, ae in enumerate(st.session_state.get("auto_engage", [])):
             key = f"msg_ae_{i}"
             if key in st.session_state:
@@ -1251,6 +1284,8 @@ if st.session_state.get("generated"):
                 "hpo_timeframe_days": st.session_state.get("hpo_timeframe_days", 30),
                 "hpo_min_visits": st.session_state.get("hpo_min_visits", 3),
                 "hpo_max_checkins": st.session_state.get("hpo_max_checkins", 10),
+                "hpo_execution": st.session_state.get("hpo_execution", "redeem"),
+                "points_rewards_enabled": st.session_state.get("points_rewards_enabled", False),
                 "auto_engage": st.session_state.get("auto_engage", []),
             },
             _collect_pdf_messages(),
@@ -1374,7 +1409,10 @@ if st.session_state.get("generated"):
         tab_labels = ["👋 Welcome"]
         if _vt_on:
             tab_labels.append("✅ Visit Tracked")
-        tab_labels += ["📊 Progress", "🎉 Rewards", "🔁 Auto-Engage"]
+        tab_labels.append("📊 Progress")
+        if _rewards_on:
+            tab_labels.append("🎉 Rewards")
+        tab_labels.append("🔁 Auto-Engage")
         if show_hp:
             tab_labels.append("🔥 Hot Prospect")
         tabs = st.tabs(tab_labels)
@@ -1405,24 +1443,25 @@ if st.session_state.get("generated"):
             )
         _ti += 1
 
-        with tabs[_ti]:
-            if program_type == "visit-based":
-                for i, tier in enumerate(st.session_state.tiers):
-                    render_message_card(
-                        f"Tier {i + 1} — {tier['reward']}",
-                        f"Celebrates earning {tier['reward']} and drives redemption.",
-                        f"msg_reward_{i}", base_ctx, "reward",
-                        {"reward_description": tier["reward"]},
-                    )
-            else:
-                for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
-                    render_message_card(
-                        f"{pkg['name']} Reward Message",
-                        f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
-                        f"msg_reward_pkg_{i}", base_ctx, "reward",
-                        {"package_name": pkg["name"], "earn_points": pkg["earn_points"], "redeem_cost": pkg["redeem_cost"], "reward_description": pkg["name"]},
-                    )
-        _ti += 1
+        if _rewards_on:
+            with tabs[_ti]:
+                if program_type == "visit-based":
+                    for i, tier in enumerate(st.session_state.tiers):
+                        render_message_card(
+                            f"Tier {i + 1} — {tier['reward']}",
+                            f"Celebrates earning {tier['reward']} and drives redemption.",
+                            f"msg_reward_{i}", base_ctx, "reward",
+                            {"reward_description": tier["reward"]},
+                        )
+                else:
+                    for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
+                        render_message_card(
+                            f"{pkg['name']} Reward Message",
+                            f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
+                            f"msg_reward_pkg_{i}", base_ctx, "reward",
+                            {"package_name": pkg["name"], "earn_points": pkg["earn_points"], "redeem_cost": pkg["redeem_cost"], "reward_description": pkg["name"]},
+                        )
+            _ti += 1
 
         with tabs[_ti]:
             for i, ae in enumerate(st.session_state.auto_engage):
@@ -1446,6 +1485,7 @@ if st.session_state.get("generated"):
                     "Hot Prospect Offer",
                     "Converts frequent visitors who haven't redeemed yet.",
                     "msg_hot_prospect", base_ctx, "hot_prospect",
+                    {"hpo_execution": st.session_state.get("hpo_execution", "redeem")},
                 )
 
     # ── All-in-One view ───────────────────────────────────────────────────────
@@ -1482,24 +1522,25 @@ if st.session_state.get("generated"):
             "msg_progress", base_ctx, "progress",
         )
 
-        st.divider()
-        _section_head("🎉 Rewards")
-        if program_type == "visit-based":
-            for i, tier in enumerate(st.session_state.tiers):
-                render_message_card(
-                    f"Tier {i + 1} — {tier['reward']}",
-                    f"Celebrates earning {tier['reward']} and drives redemption.",
-                    f"msg_reward_{i}", base_ctx, "reward",
-                    {"reward_description": tier["reward"]},
-                )
-        else:
-            for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
-                render_message_card(
-                    f"{pkg['name']} Reward Message",
-                    f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
-                    f"msg_reward_pkg_{i}", base_ctx, "reward",
-                    {"package_name": pkg["name"], "earn_points": pkg["earn_points"], "redeem_cost": pkg["redeem_cost"], "reward_description": pkg["name"]},
-                )
+        if _rewards_on:
+            st.divider()
+            _section_head("🎉 Rewards")
+            if program_type == "visit-based":
+                for i, tier in enumerate(st.session_state.tiers):
+                    render_message_card(
+                        f"Tier {i + 1} — {tier['reward']}",
+                        f"Celebrates earning {tier['reward']} and drives redemption.",
+                        f"msg_reward_{i}", base_ctx, "reward",
+                        {"reward_description": tier["reward"]},
+                    )
+            else:
+                for i, pkg in enumerate(st.session_state.get("wash_packages", [])):
+                    render_message_card(
+                        f"{pkg['name']} Reward Message",
+                        f"Sent when customer reaches {pkg['redeem_cost']} points for a {pkg['name']} wash.",
+                        f"msg_reward_pkg_{i}", base_ctx, "reward",
+                        {"package_name": pkg["name"], "earn_points": pkg["earn_points"], "redeem_cost": pkg["redeem_cost"], "reward_description": pkg["name"]},
+                    )
 
         st.divider()
         _section_head("🔁 Auto-Engage")
@@ -1524,6 +1565,7 @@ if st.session_state.get("generated"):
                 "Hot Prospect Offer",
                 "Converts frequent visitors who haven't redeemed yet.",
                 "msg_hot_prospect", base_ctx, "hot_prospect",
+                {"hpo_execution": st.session_state.get("hpo_execution", "redeem")},
             )
 
 st.markdown(

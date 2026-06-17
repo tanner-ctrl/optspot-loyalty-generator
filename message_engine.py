@@ -48,12 +48,25 @@ def _build_program_details(context: dict) -> str:
         return "\n".join(lines)
 
 
+def get_hpo_cta(execution_type: str) -> str:
+    if execution_type == "link":
+        return "Claim here: [HPO LINK]"
+    elif execution_type == "onsite":
+        return "Visit us in-store to redeem"
+    else:  # "redeem"
+        return "Redeem here: ~redeem~"
+
+
 def generate_message(message_type: str, context: dict, temperature: float = 0.7, mode: str = "SMS") -> str:
     # Post-redemption flow: customer resets to 0 visits/points.
     # Their next wash triggers the progress message, not welcome.
     # Welcome only fires on initial signup.
     # This function never decides which type to call — the caller (app.py) always
     # passes the correct message_type based on what event is being templated.
+    # Resolve HPO CTA before demo/API split so both paths get the right wording
+    if message_type == "hot_prospect":
+        context = {**context, "hpo_cta": get_hpo_cta(context.get("hpo_execution", "redeem"))}
+
     if is_demo_mode():
         from demo_messages import get_demo_message
         # Route welcome to signup-reward pool when a signup reward is configured
@@ -93,6 +106,7 @@ def generate_message(message_type: str, context: dict, temperature: float = 0.7,
             "redeem_cost": context.get("redeem_cost", ""),
             "signup_reward_block": signup_reward_block,
             "starter_unit": starter_unit,
+            "hpo_cta": context.get("hpo_cta", "Redeem here: ~redeem~"),
         }
 
         prompt = template.format(**fill)

@@ -337,6 +337,15 @@ def _incentives_summary(context: dict, styles: dict, story: list, width: float) 
         if hpo_max:
             items.append(f"HPO Maximum Check-ins: {hpo_max}")
 
+        hpo_exec = context.get("hpo_execution")
+        if hpo_exec:
+            _hpo_exec_labels = {
+                "link": "Link to ecommerce",
+                "onsite": "On-site redemption",
+                "redeem": "Hard offer",
+            }
+            items.append(f"HPO Execution: {_hpo_exec_labels.get(hpo_exec, hpo_exec)}")
+
     # 6. Auto-Engage offer entries only
     for ae in context.get("auto_engage", []):
         if ae.get("type", "offer") == "offer" and (ae.get("offer") or "").strip():

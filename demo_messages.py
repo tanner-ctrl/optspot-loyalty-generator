@@ -393,11 +393,13 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
 
     # ── HOT PROSPECT ──────────────────────────────────────────────────────────
     elif message_type == "hot_prospect":
+        hpo_cta = context.get("hpo_cta", "Redeem here: ~redeem~")
+
         sms = [
-            f"Thanks for being a regular at {name}! Your loyalty has earned you something special — claim it: ~redeem~ Stop2Stop Help4Help",
-            f"You've been coming in a lot at {name} — we appreciate it. Here's a VIP thank-you just for you: ~redeem~ Stop2Stop Help4Help",
-            f"{name} noticed your loyalty. Here's something special just for you — claim it: ~redeem~ Stop2Stop Help4Help",
-            f"You're one of our best customers at {name}. We have a VIP offer waiting for you: ~redeem~ Stop2Stop Help4Help",
+            f"Thanks for being a regular at {name}! Your loyalty has earned you something special. {hpo_cta} Stop2Stop Help4Help",
+            f"You've been coming in a lot at {name} — we appreciate it. Here's a VIP thank-you just for you. {hpo_cta} Stop2Stop Help4Help",
+            f"{name} noticed your loyalty. Here's something special just for you. {hpo_cta} Stop2Stop Help4Help",
+            f"You're one of our best customers at {name}. We have a VIP offer waiting for you. {hpo_cta} Stop2Stop Help4Help",
         ]
 
         mms = [
@@ -405,25 +407,25 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
                 f"We see you've been coming in regularly at {name} — and we want to say thank you.\n\n"
                 f"Because you've been such a loyal customer, we have something special waiting for you.\n\n"
                 f"This is our way of recognizing customers who keep showing up. You've earned it. "
-                f"Redeem here: ~redeem~"
+                f"{hpo_cta}"
             ),
             (
                 f"{name} has noticed you're one of our most loyal customers.\n\n"
                 f"That means something to us. To show our appreciation, we have a VIP offer just for you.\n\n"
-                f"No hoops to jump through — just come in and claim it: ~redeem~\n\n"
+                f"No hoops to jump through — just come in and claim it. {hpo_cta}\n\n"
                 f"Thank you for choosing {name} again and again."
             ),
             (
                 f"You've been coming in consistently and we want to say thank you properly.\n\n"
                 f"Consider this your VIP moment at {name}. We have something special waiting — "
                 f"just because you've been outstanding.\n\n"
-                f"Come in and claim it anytime: ~redeem~\n\nWe're grateful to have customers like you."
+                f"{hpo_cta}\n\nWe're grateful to have customers like you."
             ),
             (
                 f"Not everyone gets this message — you've earned it.\n\n"
                 f"Because of your consistent visits to {name}, we're offering you something special.\n\n"
                 f"It's our thank-you for being exactly the kind of customer we love. "
-                f"Redeem here: ~redeem~\n\nSee you next time at {name}."
+                f"{hpo_cta}\n\nSee you next time at {name}."
             ),
         ]
 
