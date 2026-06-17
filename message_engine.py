@@ -124,5 +124,6 @@ def generate_message(message_type: str, context: dict, temperature: float = 0.7,
     if message_type == "tracked" and context.get("program_type") == "points-based":
         message = message.replace("~ls~", "~custom3~")
         message = message.replace("~lsr~", "~custom4~")
+        message = message.replace("visit(s)", "point(s)")
 
     return message

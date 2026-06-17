@@ -154,16 +154,16 @@ def get_demo_message(message_type: str, context: dict, mode: str = "SMS") -> str
     # ── TRACKED ───────────────────────────────────────────────────────────────
     elif message_type == "tracked":
         sms = [
-            f"Thanks for visiting {name}! ~ls~ earned today, ~lsr~ to go until your reward. Stop2Stop Help4Help",
-            f"Great to see you back at {name}! You earned ~ls~ this visit — only ~lsr~ until your next reward. Stop2Stop Help4Help",
-            f"Thanks for the wash at {name}! ~ls~ credited, ~lsr~ left until your next reward. Stop2Stop Help4Help",
-            f"{name} thanks you for visiting! ~ls~ this visit, ~lsr~ to your next reward. Stop2Stop Help4Help",
+            f"Thanks for visiting {name}! ~ls~ visit(s) earned today, ~lsr~ visit(s) until your reward. Stop2Stop Help4Help",
+            f"Great to see you back at {name}! You earned ~ls~ visit(s) — only ~lsr~ visit(s) until your next reward. Stop2Stop Help4Help",
+            f"Thanks for the wash at {name}! ~ls~ visit(s) credited, ~lsr~ visit(s) left until your next reward. Stop2Stop Help4Help",
+            f"{name} thanks you for visiting! ~ls~ visit(s) added, ~lsr~ visit(s) to your next reward. Stop2Stop Help4Help",
         ]
         mms = [
-            f"Thanks for visiting {name}! You earned ~ls~ today — only ~lsr~ left until your next reward. Keep washing: [TRACK URL]",
-            f"Great to see you back at {name}! ~ls~ added this visit. Just ~lsr~ to go until your reward — track progress: [TRACK URL]",
-            f"Thanks for the wash at {name}! ~ls~ credited this visit. You're ~lsr~ away from your next reward. See your progress: [TRACK URL]",
-            f"{name} thanks you! You earned ~ls~ this visit. Only ~lsr~ left until your next reward — your next free wash is closer than you think: [TRACK URL]",
+            f"Thanks for visiting {name}! You earned ~ls~ visit(s) today — only ~lsr~ visit(s) left until your next reward. Keep washing: [TRACK URL]",
+            f"Great to see you back at {name}! ~ls~ visit(s) added this visit. Just ~lsr~ visit(s) to go until your reward — track progress: [TRACK URL]",
+            f"Thanks for the wash at {name}! ~ls~ visit(s) credited this visit. You're ~lsr~ visit(s) away from your next reward. See your progress: [TRACK URL]",
+            f"{name} thanks you! You earned ~ls~ visit(s) this visit. Only ~lsr~ visit(s) left until your next reward — your next free wash is closer than you think: [TRACK URL]",
         ]
 
         return _pick(pool_key, mms if mode == "MMS" else sms)
