@@ -7,6 +7,7 @@ import streamlit as st
 from streamlit_local_storage import LocalStorage
 from message_engine import generate_message, is_demo_mode
 from pdf_export import build_pdf
+from docx_export import build_loyalty_docx
 import resend
 
 # ── Page config ────────────────────────────────────────────────────────────────
@@ -109,6 +110,8 @@ _SCALAR_PERSIST_KEYS = [
     "hpo_membership_offer", "hpo_timeframe_days", "hpo_min_visits", "hpo_max_checkins",
     "hpo_execution",
     "points_rewards_enabled",
+    "uses_redemption_codes",
+    "codes_location", "code_format_example", "codes_provider", "code_delivery_method",
 ]
 
 
@@ -794,6 +797,49 @@ with st.sidebar:
         st.caption("How the customer redeems the HPO offer.")
 
     st.divider()
+
+    # ── Redemption Codes (PDF-only, informational) ──
+    st.markdown('<p class="sidebar-section">🎟️ Redemption Codes</p>', unsafe_allow_html=True)
+    uses_redemption_codes = st.toggle(
+        "Uses redemption codes?",
+        value=st.session_state.get("uses_redemption_codes", False),
+        key="uses_redemption_codes",
+        on_change=_save_to_storage,
+    )
+    st.caption("Toggle on if this program requires unique codes for reward redemption.")
+    if uses_redemption_codes:
+        st.text_input(
+            "Where are codes managed?",
+            placeholder="e.g., iVision Mobile, internal database, manual list",
+            key="codes_location", on_change=_save_to_storage,
+        )
+        st.text_input(
+            "Code format example",
+            placeholder="e.g., WASH-12345, OPTSPOT-XYZ",
+            key="code_format_example", on_change=_save_to_storage,
+        )
+        st.text_input(
+            "Who provides codes to OptSpot?",
+            placeholder="e.g., Client marketing team, weekly batch",
+            key="codes_provider", on_change=_save_to_storage,
+        )
+        _code_delivery_opts = [
+            "Embedded in SMS",
+            "Customer requests via reply",
+            "Provided at point of redemption",
+            "Other",
+        ]
+        st.radio(
+            "Code delivery method",
+            options=_code_delivery_opts,
+            index=_code_delivery_opts.index(
+                st.session_state.get("code_delivery_method", _code_delivery_opts[0])
+            ) if st.session_state.get("code_delivery_method") in _code_delivery_opts else 0,
+            key="code_delivery_method",
+            on_change=_save_to_storage,
+        )
+
+    st.divider()
     generate_btn = st.button("Generate Messages", type="primary", use_container_width=True)
 
     st.divider()
@@ -1257,7 +1303,7 @@ if st.session_state.get("generated"):
             }
         return msgs
 
-    header_col, dl_col = st.columns([3, 1])
+    header_col, dl_col = st.columns([2, 2])
     with header_col:
         st.markdown(
             f"<p style='color:#E8EDF5;font-weight:700;font-size:1.2rem;margin:0 0 2px 0;'>"
@@ -1268,35 +1314,53 @@ if st.session_state.get("generated"):
         )
     with dl_col:
         safe = re.sub(r"[^\w\s-]", "", car_wash_name).strip().replace(" ", "_") or "car_wash"
-        pdf_bytes = build_pdf(
-            {
-                "car_wash_name": car_wash_name,
-                "program_type": program_type,
-                "generated_date": str(date.today()),
-                "signup_reward_enabled": st.session_state.get("signup_reward_enabled", False),
-                "signup_reward": st.session_state.get("signup_reward", ""),
-                "signup_reward_expires_days": st.session_state.get("signup_reward_expires_days", 7),
-                "tiers": st.session_state.get("tiers", []) if program_type == "visit-based" else [],
-                "wash_packages": st.session_state.get("wash_packages", []) if program_type == "points-based" else [],
-                "visit_tracked_enabled": st.session_state.get("visit_tracked_enabled", True),
-                "hpo_enabled": st.session_state.get("hpo_enabled", True),
-                "hpo_membership_offer": st.session_state.get("hpo_membership_offer", ""),
-                "hpo_timeframe_days": st.session_state.get("hpo_timeframe_days", 30),
-                "hpo_min_visits": st.session_state.get("hpo_min_visits", 3),
-                "hpo_max_checkins": st.session_state.get("hpo_max_checkins", 10),
-                "hpo_execution": st.session_state.get("hpo_execution", "redeem"),
-                "points_rewards_enabled": st.session_state.get("points_rewards_enabled", False),
-                "auto_engage": st.session_state.get("auto_engage", []),
-            },
-            _collect_pdf_messages(),
-        )
-        st.download_button(
-            label="Download PDF",
-            data=pdf_bytes,
-            file_name=f"{safe}_loyalty_messages_{date.today()}.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-        )
+        _export_context = {
+            "car_wash_name": car_wash_name,
+            "program_type": program_type,
+            "generated_date": str(date.today()),
+            "signup_reward_enabled": st.session_state.get("signup_reward_enabled", False),
+            "signup_reward": st.session_state.get("signup_reward", ""),
+            "signup_reward_expires_days": st.session_state.get("signup_reward_expires_days", 7),
+            "tiers": st.session_state.get("tiers", []) if program_type == "visit-based" else [],
+            "wash_packages": st.session_state.get("wash_packages", []) if program_type == "points-based" else [],
+            "visit_tracked_enabled": st.session_state.get("visit_tracked_enabled", True),
+            "points_rewards_enabled": st.session_state.get("points_rewards_enabled", False),
+            "view_mode": st.session_state.get("view_mode", "Tabs"),
+            "hpo_enabled": st.session_state.get("hpo_enabled", True),
+            "hpo_membership_offer": st.session_state.get("hpo_membership_offer", ""),
+            "hpo_timeframe_days": st.session_state.get("hpo_timeframe_days", 30),
+            "hpo_min_visits": st.session_state.get("hpo_min_visits", 3),
+            "hpo_max_checkins": st.session_state.get("hpo_max_checkins", 10),
+            "hpo_execution": st.session_state.get("hpo_execution", "redeem"),
+            "auto_engage": st.session_state.get("auto_engage", []),
+            "uses_redemption_codes": st.session_state.get("uses_redemption_codes", False),
+            "codes_location": st.session_state.get("codes_location", ""),
+            "code_format_example": st.session_state.get("code_format_example", ""),
+            "codes_provider": st.session_state.get("codes_provider", ""),
+            "code_delivery_method": st.session_state.get("code_delivery_method", ""),
+        }
+        _export_messages = _collect_pdf_messages()
+        pdf_bytes = build_pdf(_export_context, _export_messages)
+        docx_bytes = build_loyalty_docx(_export_context, _export_messages)
+
+        dl_pdf_col, dl_docx_col = st.columns(2)
+        with dl_pdf_col:
+            st.download_button(
+                label="📄 Download PDF",
+                data=pdf_bytes,
+                file_name=f"{safe}_loyalty_messages_{date.today()}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+        with dl_docx_col:
+            st.download_button(
+                label="📝 Export Word Doc",
+                data=docx_bytes,
+                file_name=f"{safe}_loyalty_draft_{date.today()}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+            )
+        st.caption("Upload to Google Drive and open with Google Docs for client review and comments.")
 
     # ── Default mode + bulk controls ──────────────────────────────────────────
     st.divider()

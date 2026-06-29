@@ -351,7 +351,21 @@ def _incentives_summary(context: dict, styles: dict, story: list, width: float) 
         if ae.get("type", "offer") == "offer" and (ae.get("offer") or "").strip():
             items.append(f"{ae['days']} Day Offer: {ae['offer']}")
 
-    if not items:
+    # 7. Redemption Codes sub-section — only when enabled, only filled fields
+    code_items = []
+    if context.get("uses_redemption_codes"):
+        _code_fields = [
+            ("codes_location", "Codes managed at"),
+            ("code_format_example", "Code format"),
+            ("codes_provider", "Codes provided by"),
+            ("code_delivery_method", "Delivery method"),
+        ]
+        for key, label in _code_fields:
+            val = (context.get(key) or "").strip()
+            if val:
+                code_items.append(f"{label}: {val}")
+
+    if not items and not code_items:
         return
 
     header_style = ParagraphStyle(
@@ -369,9 +383,23 @@ def _incentives_summary(context: dict, styles: dict, story: list, width: float) 
         leading=17,
     )
 
+    subhead_style = ParagraphStyle(
+        "incentives_subhead",
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        textColor=NAVY,
+        leading=15,
+    )
+
     rows = [[Paragraph("Program Incentives Summary", header_style)]]
+    subhead_idx = set()
     for item in items:
         rows.append([Paragraph(f"•  {html.escape(item)}", body_style)])
+    if code_items:
+        subhead_idx.add(len(rows))
+        rows.append([Paragraph("Redemption Codes", subhead_style)])
+        for item in code_items:
+            rows.append([Paragraph(f"•  {html.escape(item)}", body_style)])
 
     tbl = Table(rows, colWidths=[width])
 
@@ -386,7 +414,7 @@ def _incentives_summary(context: dict, styles: dict, story: list, width: float) 
     for r in range(1, len(rows)):
         style_cmds += [
             ("BACKGROUND",    (0, r), (0, r), CALLOUT_BG),
-            ("TOPPADDING",    (0, r), (0, r), 5),
+            ("TOPPADDING",    (0, r), (0, r), 8 if r in subhead_idx else 5),
             ("BOTTOMPADDING", (0, r), (0, r), 5),
         ]
     tbl.setStyle(TableStyle(style_cmds))
