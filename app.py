@@ -1,6 +1,7 @@
 import base64
 import hmac
 import html as _html
+import json
 import re
 from datetime import date, datetime
 from PIL import Image
@@ -114,6 +115,7 @@ _SCALAR_PERSIST_KEYS = [
     "points_rewards_enabled",
     "uses_redemption_codes",
     "codes_location", "code_format_example", "codes_provider", "code_delivery_method",
+    "user_optspot_email",
 ]
 
 
@@ -289,7 +291,7 @@ def build_loyalty_html(context: dict, messages_data: dict) -> str:
     return "".join(parts)
 
 
-def _gdocs_copy_button_html(rendered_html: str) -> str:
+def _gdocs_copy_button_html(rendered_html: str, user_email: str = "") -> str:
     """Build a self-contained HTML/JS button that copies rich HTML to the
     clipboard and opens a blank Google Doc. Falls back to plain text when the
     rich clipboard API is unavailable, and surfaces permission errors clearly.
@@ -303,6 +305,8 @@ def _gdocs_copy_button_html(rendered_html: str) -> str:
         .replace("$", "\\$")
         .replace("</", "<\\/")
     )
+    # json.dumps yields a safely-escaped JS string literal (quotes included).
+    email_js = json.dumps((user_email or "").strip())
     return f"""
 <button id="copyDocsBtn" style="
     width:100%;background-color:#23A3EA;color:#FFFFFF;border:none;border-radius:4px;
@@ -314,7 +318,12 @@ def _gdocs_copy_button_html(rendered_html: str) -> str:
 <script>
 document.getElementById('copyDocsBtn').addEventListener('click', async () => {{
     const html = `{safe}`;
-    const docUrl = 'https://docs.google.com/document/create';
+    const userEmail = {email_js};
+    // Force the new doc to open under the AM's OptSpot account when set;
+    // otherwise fall back to the browser's default Google account.
+    const docUrl = userEmail
+        ? `https://docs.google.com/document/create?authuser=${{encodeURIComponent(userEmail)}}`
+        : 'https://docs.google.com/document/create';
     try {{
         if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {{
             const blob = new Blob([html], {{type: 'text/html'}});
@@ -682,6 +691,19 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
+    # ── Per-AM account (not client config; preserved across Reset) ──
+    with st.expander("👤 Your Account", expanded=False):
+        user_optspot_email = st.text_input(
+            "Your OptSpot email",
+            value=st.session_state.get("user_optspot_email", ""),
+            key="user_optspot_email",
+            placeholder="firstname@optspot.com",
+            on_change=_save_to_storage,
+        )
+        st.caption("Used to open Google Docs in your OptSpot account, not your personal one. Saved on this browser.")
+        if user_optspot_email and not user_optspot_email.strip().lower().endswith("@optspot.com"):
+            st.warning("This doesn't look like an @optspot.com email — Google Docs may open under the wrong account.")
+
     st.markdown('<p class="sidebar-section">Program Setup</p>', unsafe_allow_html=True)
 
     car_wash_name = st.text_input(
@@ -988,8 +1010,13 @@ with st.sidebar:
         st.session_state["_confirm_reset"] = False
 
     def _do_reset():
-        # Clear config keys (everything except internal flags starting with _)
-        keys_to_clear = [k for k in st.session_state.keys() if not k.startswith("_")]
+        # Clear config keys (everything except internal flags starting with _).
+        # Preserve per-AM account config — it's not client data and must survive Reset.
+        _preserve = {"user_optspot_email"}
+        keys_to_clear = [
+            k for k in st.session_state.keys()
+            if not k.startswith("_") and k not in _preserve
+        ]
         for k in keys_to_clear:
             del st.session_state[k]
         # Reset guards so next render will load defaults from storage (or empty)
@@ -1498,10 +1525,16 @@ if st.session_state.get("generated"):
             )
         with dl_gdoc_col:
             _draft_html = build_loyalty_html(_export_context, _export_messages)
-            components.html(_gdocs_copy_button_html(_draft_html), height=60)
+            components.html(
+                _gdocs_copy_button_html(
+                    _draft_html,
+                    st.session_state.get("user_optspot_email", ""),
+                ),
+                height=60,
+            )
         st.caption(
-            "Click to copy the full draft to clipboard. A new Google Doc opens in a "
-            "new tab — paste with Cmd+V. (Word download still works for Drive upload.)"
+            "Click to copy the draft. A new Google Doc opens in your OptSpot account "
+            "if your email is set above."
         )
 
     # ── Default mode + bulk controls ──────────────────────────────────────────
