@@ -1,13 +1,15 @@
 import base64
 import hmac
+import html as _html
 import re
 from datetime import date, datetime
 from PIL import Image
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_local_storage import LocalStorage
 from message_engine import generate_message, is_demo_mode
 from pdf_export import build_pdf
-from docx_export import build_loyalty_docx
+from docx_export import build_loyalty_docx, _incentive_items, _code_items
 import resend
 
 # ── Page config ────────────────────────────────────────────────────────────────
@@ -211,6 +213,138 @@ if "global_upload_counter" not in st.session_state:
 def _img_b64(path: str) -> str:
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
+
+
+# Order matches the docx/PDF exports. (section name, messages_data key)
+_HTML_SECTIONS = [
+    ("Welcome", "welcome"),
+    ("Visit Tracked", "tracked"),
+    ("Progress", "progress"),
+    ("Rewards", "rewards"),
+    ("Auto-Engage", "auto_engage"),
+    ("Hot Prospect", "hot_prospect"),
+]
+
+
+def build_loyalty_html(context: dict, messages_data: dict) -> str:
+    """Render the loyalty draft as semantic, inline-styled HTML.
+
+    Mirrors the docx/PDF content. Inline styles only (no <style> blocks) so it
+    pastes cleanly into Google Docs with headings, bullets, and message blocks.
+    Disabled sections are skipped (they're simply absent from messages_data).
+    """
+    esc = _html.escape
+    FAM = "font-family:Arial,sans-serif;"
+    NAVY = "color:#264078;"
+    BLUE = "color:#23A3EA;"
+    GRAY = "color:#888888;"
+
+    car_wash = context.get("car_wash_name") or "Car Wash"
+    parts = [
+        f'<h1 style="{FAM}{NAVY}">{esc(car_wash)} — Loyalty Message Draft</h1>',
+        f'<p style="{FAM}{GRAY}"><em>Prepared by OptSpot. '
+        f'Review, edit, and return for finalization.</em></p>',
+    ]
+
+    # ── Program Incentives Summary ──
+    parts.append(f'<h2 style="{FAM}{NAVY}">Program Incentives Summary</h2>')
+    items = _incentive_items(context)
+    code_items = _code_items(context)
+    if items:
+        parts.append("<ul>")
+        parts += [f'<li style="{FAM}">{esc(it)}</li>' for it in items]
+        parts.append("</ul>")
+    if code_items:
+        parts.append(f'<h3 style="{FAM}{NAVY}">Redemption Codes</h3>')
+        parts.append("<ul>")
+        parts += [f'<li style="{FAM}">{esc(it)}</li>' for it in code_items]
+        parts.append("</ul>")
+    if not items and not code_items:
+        parts.append(f'<p style="{FAM}">No incentives configured.</p>')
+
+    # ── Message sections ──
+    for section_name, key in _HTML_SECTIONS:
+        payload = messages_data.get(key)
+        if not payload:
+            continue
+        entries = payload if isinstance(payload, list) else [payload]
+        entries = [m for m in entries if m and m.get("text")]
+        if not entries:
+            continue
+
+        parts.append(f'<h2 style="{FAM}{NAVY}">{esc(section_name)}</h2>')
+        multi = len(entries) > 1
+        for m in entries:
+            mode = m.get("mode", "SMS")
+            heading = f"{m.get('label', section_name)} ({mode})" if multi else mode
+            parts.append(f'<h3 style="{FAM}{BLUE}">{esc(heading)}</h3>')
+            body = esc(m.get("text", "")).replace("\n", "<br>")
+            parts.append(f'<p style="{FAM}">{body}</p>')
+        parts.append("<br><br>")
+
+    parts.append(
+        f'<p style="{FAM}{GRAY}"><em>OptSpot Internal Draft — '
+        f'for client review only.</em></p>'
+    )
+    return "".join(parts)
+
+
+def _gdocs_copy_button_html(rendered_html: str) -> str:
+    """Build a self-contained HTML/JS button that copies rich HTML to the
+    clipboard and opens a blank Google Doc. Falls back to plain text when the
+    rich clipboard API is unavailable, and surfaces permission errors clearly.
+    """
+    # Escape for safe embedding inside a JS template literal:
+    #   backslash first, then backtick and $ (template interpolation), and
+    #   neutralize any "</script>" so the HTML parser can't close the tag early.
+    safe = (
+        rendered_html.replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("$", "\\$")
+        .replace("</", "<\\/")
+    )
+    return f"""
+<button id="copyDocsBtn" style="
+    width:100%;background-color:#23A3EA;color:#FFFFFF;border:none;border-radius:4px;
+    font-weight:700;font-size:0.92rem;letter-spacing:0.02em;padding:0.55rem 0.8rem;
+    cursor:pointer;box-shadow:0 3px 10px rgba(35,163,234,0.35);
+    font-family:'Source Sans Pro',Arial,sans-serif;">
+    📋 Copy + Open in Google Docs
+</button>
+<script>
+document.getElementById('copyDocsBtn').addEventListener('click', async () => {{
+    const html = `{safe}`;
+    const docUrl = 'https://docs.google.com/document/create';
+    try {{
+        if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {{
+            const blob = new Blob([html], {{type: 'text/html'}});
+            const item = new ClipboardItem({{'text/html': blob}});
+            await navigator.clipboard.write([item]);
+            window.open(docUrl, '_blank');
+        }} else {{
+            throw new Error('Rich clipboard not supported');
+        }}
+    }} catch (err) {{
+        // Fallback: copy plain text so the AM still gets the draft content.
+        try {{
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            const plain = tmp.innerText || tmp.textContent || '';
+            await navigator.clipboard.writeText(plain);
+            window.open(docUrl, '_blank');
+            alert('Copied as plain text (rich formatting is unavailable in this browser). Paste with Cmd+V.');
+        }} catch (err2) {{
+            const msg = (err2 && err2.message) ? err2.message : String(err);
+            if (err2 && (err2.name === 'NotAllowedError' || /denied|permission/i.test(msg))) {{
+                alert('Clipboard access is blocked. Enable clipboard permission for this site in your browser, then try again.');
+            }} else {{
+                alert('Clipboard copy failed: ' + msg);
+            }}
+        }}
+    }}
+}});
+</script>
+"""
 
 
 # ── Custom CSS ─────────────────────────────────────────────────────────────────
@@ -824,13 +958,14 @@ with st.sidebar:
             key="codes_provider", on_change=_save_to_storage,
         )
         _code_delivery_opts = [
-            "Embedded in SMS",
-            "Customer requests via reply",
-            "Provided at point of redemption",
+            "Code included in the SMS",
+            "Customer texts back to receive a code",
+            "Code given in-store at redemption",
+            "Auto-recognized at kiosk (LPR — no code needed)",
             "Other",
         ]
         st.radio(
-            "Code delivery method",
+            "How does the customer redeem the reward?",
             options=_code_delivery_opts,
             index=_code_delivery_opts.index(
                 st.session_state.get("code_delivery_method", _code_delivery_opts[0])
@@ -838,6 +973,7 @@ with st.sidebar:
             key="code_delivery_method",
             on_change=_save_to_storage,
         )
+        st.caption("Pick the option that best matches how this client's reward gets delivered.")
 
     st.divider()
     generate_btn = st.button("Generate Messages", type="primary", use_container_width=True)
@@ -1303,7 +1439,7 @@ if st.session_state.get("generated"):
             }
         return msgs
 
-    header_col, dl_col = st.columns([2, 2])
+    header_col, dl_col = st.columns([1, 3])
     with header_col:
         st.markdown(
             f"<p style='color:#E8EDF5;font-weight:700;font-size:1.2rem;margin:0 0 2px 0;'>"
@@ -1343,7 +1479,7 @@ if st.session_state.get("generated"):
         pdf_bytes = build_pdf(_export_context, _export_messages)
         docx_bytes = build_loyalty_docx(_export_context, _export_messages)
 
-        dl_pdf_col, dl_docx_col = st.columns(2)
+        dl_pdf_col, dl_docx_col, dl_gdoc_col = st.columns(3)
         with dl_pdf_col:
             st.download_button(
                 label="📄 Download PDF",
@@ -1354,13 +1490,19 @@ if st.session_state.get("generated"):
             )
         with dl_docx_col:
             st.download_button(
-                label="📝 Export Word Doc",
+                label="📝 Download Word",
                 data=docx_bytes,
                 file_name=f"{safe}_loyalty_draft_{date.today()}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True,
             )
-        st.caption("Upload to Google Drive and open with Google Docs for client review and comments.")
+        with dl_gdoc_col:
+            _draft_html = build_loyalty_html(_export_context, _export_messages)
+            components.html(_gdocs_copy_button_html(_draft_html), height=60)
+        st.caption(
+            "Click to copy the full draft to clipboard. A new Google Doc opens in a "
+            "new tab — paste with Cmd+V. (Word download still works for Drive upload.)"
+        )
 
     # ── Default mode + bulk controls ──────────────────────────────────────────
     st.divider()
