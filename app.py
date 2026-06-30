@@ -2,15 +2,13 @@ import base64
 import hmac
 import html as _html
 import json
-import re
 from datetime import date, datetime
 from PIL import Image
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_local_storage import LocalStorage
 from message_engine import generate_message, is_demo_mode
-from pdf_export import build_pdf
-from docx_export import build_loyalty_docx, _incentive_items, _code_items
+from docx_export import _incentive_items, _code_items
 import resend
 
 # ── Page config ────────────────────────────────────────────────────────────────
@@ -1476,7 +1474,6 @@ if st.session_state.get("generated"):
             unsafe_allow_html=True,
         )
     with dl_col:
-        safe = re.sub(r"[^\w\s-]", "", car_wash_name).strip().replace(" ", "_") or "car_wash"
         _export_context = {
             "car_wash_name": car_wash_name,
             "program_type": program_type,
@@ -1503,35 +1500,16 @@ if st.session_state.get("generated"):
             "code_delivery_method": st.session_state.get("code_delivery_method", ""),
         }
         _export_messages = _collect_pdf_messages()
-        pdf_bytes = build_pdf(_export_context, _export_messages)
-        docx_bytes = build_loyalty_docx(_export_context, _export_messages)
 
-        dl_pdf_col, dl_docx_col, dl_gdoc_col = st.columns(3)
-        with dl_pdf_col:
-            st.download_button(
-                label="📄 Download PDF",
-                data=pdf_bytes,
-                file_name=f"{safe}_loyalty_messages_{date.today()}.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-            )
-        with dl_docx_col:
-            st.download_button(
-                label="📝 Download Word",
-                data=docx_bytes,
-                file_name=f"{safe}_loyalty_draft_{date.today()}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True,
-            )
-        with dl_gdoc_col:
-            _draft_html = build_loyalty_html(_export_context, _export_messages)
-            components.html(
-                _gdocs_copy_button_html(
-                    _draft_html,
-                    st.session_state.get("user_optspot_email", ""),
-                ),
-                height=60,
-            )
+        # Single primary export: copy the draft as rich HTML and open a Google Doc.
+        _draft_html = build_loyalty_html(_export_context, _export_messages)
+        components.html(
+            _gdocs_copy_button_html(
+                _draft_html,
+                st.session_state.get("user_optspot_email", ""),
+            ),
+            height=60,
+        )
         st.caption(
             "Click to copy the draft. A new Google Doc opens in your OptSpot account "
             "if your email is set above."
